@@ -44,22 +44,11 @@
 
     let playerName = null;
     let audioCtx = null;
-    function playBuzzSound() {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
-      audioCtx = audioCtx || new Ctx();
-      const t = audioCtx.currentTime;
-      [392, 262].forEach((freq, i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "square"; osc.frequency.value = freq;
-        gain.gain.setValueAtTime(.0001, t + i * .13);
-        gain.gain.exponentialRampToValueAtTime(.12, t + i * .13 + .01);
-        gain.gain.exponentialRampToValueAtTime(.0001, t + i * .13 + .16);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(t + i * .13); osc.stop(t + i * .13 + .18);
-      });
-    }
+    let phoneMuted=false;const phoneAudio={buzz:new Audio('assets/metal_gear_solid.mp3'),accepted:new Audio('assets/hooah.mp3'),denied:new Audio('assets/no_sir.mp3')};let ackQuestion=null;
+    function playPhoneSound(kind){if(phoneMuted||lastSnapshot?.audio?.muted)return;Object.values(phoneAudio).forEach(s=>s.pause());const clip=phoneAudio[kind];clip.volume=lastSnapshot?.audio?.volume??.25;clip.currentTime=0;clip.play().catch(()=>{});}
+    function playBuzzSound(){playPhoneSound('buzz');}
+    const phoneMute=document.createElement('button');phoneMute.className='btn';phoneMute.textContent='Mute phone sounds';phoneMute.onclick=()=>{phoneMuted=!phoneMuted;phoneMute.textContent=phoneMuted?'Unmute phone sounds':'Mute phone sounds';if(phoneMuted)Object.values(phoneAudio).forEach(s=>s.pause());};buzzerSection.append(phoneMute);
+
 
 
     // ---- Flash animation ----
@@ -319,13 +308,14 @@
       if(data.type==='snapshot'){applySnapshot(data);return;}
       // Snapshot owns gameplay display; acknowledgments provide immediate feedback only.
       if(['question-start','question-end','board-state','final-answer','final-wager'].includes(data.type))return;
+      if(data.player===playerName&&data.type==='answer-received'&&ackQuestion!==currentQuestion){ackQuestion=currentQuestion;playPhoneSound('accepted');}if(data.player===playerName&&data.type==='buzz-denied')playPhoneSound('denied');
       handleHostMessage(data);
       if(data.type==='answer-denied'){submittedQuestion=null;remoteAnswerInput.disabled=false;submitAnswerBtn.disabled=false;}
       if(data.type==='final-error'){finalWagerBtn.disabled=false;finalAnswerBtn.disabled=false;}
       if(data.type==='join-ack'&&!data.registered){loginSection.style.display='block';buzzerSection.style.display='none';loginError.textContent=data.reason||'Name already in use.';playerName=null;}
     }
     function applySnapshot(data){if(!playerName)return;const previousQuestion=currentQuestion,previousPhase=lastSnapshot?.phase;if(data.gameId!==currentGame){lastRevision=-1;currentGame=data.gameId;currentQuestion=data.questionId;}
-      if(data.revision<=lastRevision)return;lastRevision=data.revision;lastSnapshot=data;lastSnapshotAt=Date.now();currentQuestion=data.questionId;
+      if(data.revision<=lastRevision)return;lastRevision=data.revision;lastSnapshot=data;if(data.audio?.muted)Object.values(phoneAudio).forEach(s=>s.pause());lastSnapshotAt=Date.now();currentQuestion=data.questionId;
       if(!registeredId){const p=(data.scores||[]).find(p=>sameName(p.name,playerName));if(p)registeredId=p.id;}
       if(previousQuestion!==data.questionId||(previousPhase==='debrief'&&['answering','steal-answering'].includes(data.phase))){submittedQuestion=null;remoteAnswerInput.value='';}document.body.dataset.playerPhase=data.phase;
       $('phonePhase').textContent=data.phase.replace(/-/g,' ').toUpperCase();$('phoneConnection').textContent='CONNECTED';$('phoneLatency').textContent=lastLatency+'ms relay';$('phoneGuileMessage').textContent=data.guile||'';

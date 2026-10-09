@@ -1,32 +1,23 @@
-# Military audio schedule
+# Custom game sound schedule
 
-Audio plays on the host, using the existing volume and mute controls. Clips do not delay play. Browser playback starts after interaction.
+Source: user-filled Game-Sound-Schedule(1).xlsx. Blank assignments preserve existing cues. Filename spelling variations resolved to uploaded assets. Audio uses host volume and mute settings; phone cues also have a local mute button.
 
-| Event | Asset |
-|---|---|
-| Lobby entrance | awaiting_orders.mp3 |
-| Player joins | m1_garand_notification.mp3 |
-| Briefing entrance | platoon_attention.mp3 |
-| Board entrance / return | orders_received.mp3 |
-| Correct answer | roger.mp3 |
-| Wrong answer | no_sir.mp3 |
-| Successful steal | brrrrt.mp3 |
-| Final secret wagering entrance | military_top_secret.mp3 |
-| Final results | hooah.mp3 |
-| Last 10 seconds of question / steal timer | beating_hearts.mp3 (loop; stops on pause, mute or question end) |
+| ID | Event | Clip | Playback |
+|---|---|---|---|
+| S01 | Landing / lobby music | hard_work_cadence.mp3 | Host loop after first click; stops leaving lobby |
+| S04 | New player joins | awaiting_orders.mp3 | Host once; reconnect is silent |
+| S05 | Player becomes ready | orders_received.mp3 | Host once; repeated ready messages are silent |
+| S06 | All players become ready | platoon_attention.mp3 | Host once, replaces individual ready cue |
+| S18 | Thinking music | helicopter_military.mp3 | Host loop; stops on answer, pass, timeout or pause |
+| S21 | Valid answer acknowledged | hooah.mp3 | Player phone once per question |
+| S22 | Correct answer | hooah.mp3 | Host once |
+| S27 | Steal countdown | m1_garand_notification.mp3 | Host once each second while open; stops on accepted buzz, expiry or pause |
+| S28 | Phone buzz button | metal_gear_solid.mp3 | Player phone once |
+| S29 | Buzz accepted | military_radio.mp3 | Host once |
+| S30 | Buzz denied | no_sir.mp3 | Player phone once |
+| S31 | Successful steal | hooah.mp3 | Host once |
+| S32 | Failed steal | no_sir.mp3 | Host once |
+| S56 | Final entrance | isac_enter_dark_zone.mp3 | Host once; selected in follow-up |
+| S70 | Winner announcement | trumpet.mp3 | Host once; selected in follow-up |
 
-Existing Metal Gear buzz cue and hip-hop question/Final music remain available.
-
-## Uploaded and available for future assignments
-
-- military_radio.mp3
-- hooah (1).mp3
-- i_left_my_home.mp3
-- helicopter_military.mp3
-- hard_work_cadence.mp3
-- medical_assist.mp3
-- ds_half_right.mp3
-- army_msg_2009.mp3
-- military_march.mp3
-
-These clips are stored without automatic triggers to keep spoken cues and question reading clear.
+Existing heartbeat urgency, wrong-answer cue and Final hip-hop music remain. Additional uploaded clips include helicopter_military(1).mp3 and platoon_attention(1).mp3; canonical filenames above are used in game code.

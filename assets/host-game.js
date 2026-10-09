@@ -232,19 +232,23 @@
     // -----------------------------
     const audio = { ctx:null, master:null, mode:"on", volume:0.25, musicTimer:null, musicStep:0, musicKind:null };
     // Uploaded hip-hop clue timer beat. Starts from the beginning for each regular clue.
-    const questionBeat = new Audio("assets/jeopardy-hip-hop-beat.mp3");
+    const questionBeat = new Audio("assets/helicopter_military.mp3");
     questionBeat.preload = "auto";
-    questionBeat.loop = false;
+    questionBeat.loop = true;
     // Uploaded result sound effects
-    const moneySound = new Audio("assets/roger.mp3");
+    const moneySound = new Audio("assets/hooah.mp3");
     const stealSound = new Audio("assets/no_sir.mp3");
     const rizzSound = new Audio("assets/no_sir.mp3");
-    const boomSound = new Audio("assets/brrrrt.mp3");
-    const buzzSound = new Audio("assets/metal_gear_solid.mp3");
-    const joinSound = new Audio("assets/m1_garand_notification.mp3");
+    const boomSound = new Audio("assets/hooah.mp3");
+    const buzzSound = new Audio("assets/military_radio.mp3");
+    const joinSound = new Audio("assets/awaiting_orders.mp3");
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
-    const stageSounds = Object.fromEntries(Object.entries({lobby:'awaiting_orders.mp3',briefing:'platoon_attention.mp3',selection:'orders_received.mp3','final-wager':'military_top_secret.mp3',results:'hooah.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
+    const stageSounds = Object.fromEntries(Object.entries({'final-wager':'isac_enter_dark_zone.mp3',results:'trumpet.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
+    const landingBed=new Audio('assets/hard_work_cadence.mp3');landingBed.preload='none';landingBed.loop=true;
+    const readyCue=new Audio('assets/orders_received.mp3'),allReadyCue=new Audio('assets/platoon_attention.mp3'),stealTick=new Audio('assets/m1_garand_notification.mp3');
+    function syncLandingBed(){if(['landing','lobby'].includes(document.body.dataset.screen)&&soundModeSel.value!=='off'){landingBed.volume=audio.volume;landingBed.play().catch(()=>{});}else{landingBed.pause();landingBed.currentTime=0;}}
+    function readySound(wasReady,wasAllReady,index){if(!wasReady&&state.ready.get(index)){playResultSound(readyCue);if(!wasAllReady&&allReady())playResultSound(allReadyCue);}}
     const pressureSound=new Audio('assets/beating_hearts.mp3');pressureSound.preload='none';pressureSound.loop=true;
     function stopPressure(){pressureSound.pause();pressureSound.currentTime=0;syncQuestionBeatVolume();}
     function startPressure(){if(soundModeSel.value==='off')return;pressureSound.volume=audio.volume;questionBeat.volume=audio.volume*.25;pressureSound.play().catch(()=>{});}
@@ -255,7 +259,7 @@
       questionBeat.volume=0.06;finalBeat.volume=0.06;clearTimeout(resultSoundEndTimer);
       resultSoundEndTimer=setTimeout(()=>{syncQuestionBeatVolume();finalBeat.volume=audio.volume;},1500);
       if (soundModeSel.value === "off") return;
-      [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => {
+      [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound,readyCue,allReadyCue].forEach(s => {
         if (s !== sound) { s.pause(); s.currentTime = 0; }
       });
       sound.volume = Math.max(0, Math.min(1, Number(volumeInput.value || 0.25)));
@@ -308,18 +312,18 @@
       audio.master.connect(audio.ctx.destination);
       setAudioFromUI();
     }
-    document.addEventListener("click", ()=>audioInit(), { once:true });
+    document.addEventListener("click", ()=>{audioInit();syncLandingBed();}, { once:true });
 
 
     function setAudioFromUI(){
       audio.mode = soundModeSel.value;
       audio.volume = Math.max(0, Math.min(1, Number(volumeInput.value || 0.25)));
       if (audio.master) audio.master.gain.value = audio.volume;
-      pressureSound.volume=audio.volume;Object.values(stageSounds).forEach(s=>s.volume=audio.volume);
+      pressureSound.volume=audio.volume;landingBed.volume=audio.volume;Object.values(stageSounds).forEach(s=>s.volume=audio.volume);
     }
-    soundModeSel.addEventListener("change", setAudioFromUI);
+    soundModeSel.addEventListener("change", ()=>{setAudioFromUI();syncLandingBed();});
     volumeInput.addEventListener("change", ()=>{ setAudioFromUI(); syncQuestionBeatVolume(); finalBeat.volume = Math.max(0, Math.min(1, Number(volumeInput.value || 0.25))); });
-    soundModeSel.addEventListener("change", ()=>{ if (soundModeSel.value === "off") { pauseQuestionBeat(); stopPressure();stopStageSounds();stopFinalBeat();stopMusic();[moneySound,stealSound,rizzSound,boomSound,buzzSound,joinSound].forEach(s=>s.pause()); } });
+    soundModeSel.addEventListener("change", ()=>{ if (soundModeSel.value === "off") { pauseQuestionBeat(); stopPressure();stopStageSounds();stopFinalBeat();stopMusic();[moneySound,stealSound,rizzSound,boomSound,buzzSound,joinSound,readyCue,allReadyCue,stealTick,landingBed].forEach(s=>s.pause()); } });
 
 
     function now(){ return audio.ctx?.currentTime ?? 0; }
@@ -397,7 +401,7 @@
       clearLobbyError();
       const idx = state.players.length;
       state.players.push({ id:MissionCore.id(), name, score: 0 });
-      state.ready.set(idx, false);
+      state.ready.set(idx, false);playJoinSound();
       nameInput.value = "";
       renderLobbyList();
       if(engineReady){checkpoint();sendSnapshot();}
@@ -454,7 +458,7 @@
 
     function toggleReadyByIndex(idx){
       if (idx < 0 || idx >= state.players.length) return;
-      state.ready.set(idx, !state.ready.get(idx));
+      const wasReady=!!state.ready.get(idx),wasAllReady=allReady();state.ready.set(idx, !wasReady);readySound(wasReady,wasAllReady,idx);
       renderWaitingRoom();
       updateBeginEnabled();
     }
@@ -894,12 +898,12 @@
       buzzerActive=['main','steal','steal-answer'].includes(mode);firstBuzzer=null;
       setPhase(mode==='dd-wager'?P.WAGER:mode==='steal'?P.STEAL:mode==='steal-answer'?P.STEAL_ANSWER:P.ANSWER);
       const canInput=phase!==P.STEAL&&phase!==P.WAGER;answerInput.disabled=!canInput;submitBtn.disabled=!canInput;passBtn.disabled=!canInput;
-      timerEl.textContent=state.timer.remaining+'s';
-      state.timer.id=setInterval(()=>{if(state.timer.paused)return;state.timer.remaining=MissionCore.remaining(deadline);timerEl.textContent=state.timer.remaining+'s';timerEl.classList.toggle('timer-critical',state.timer.remaining<=10);if(state.timer.remaining<=10&&!state.timer.warned){state.timer.warned=true;startPressure();guileBrief('Ten seconds. Stay focused.');}if(state.timer.remaining>0)return;const expiredMode=state.timer.mode;stopTimer();if(typeof onExpire==='function')return onExpire();if(expiredMode==='dd-wager'){markUsed();closeClue();return;}const [cat,row]=state.activeKey.split('::');const clue=state.board.clueFor(cat,Number(row));sfxTimesUp();if(expiredMode==='steal'){showDebrief(clue,false);return;}continueAfterMiss(clue,'Time expired.');},250);
+      timerEl.textContent=state.timer.remaining+'s';let lastStealTick=-1;if(mode==='steal-answer')startQuestionBeat();
+      state.timer.id=setInterval(()=>{if(state.timer.paused)return;state.timer.remaining=MissionCore.remaining(deadline);timerEl.textContent=state.timer.remaining+'s';timerEl.classList.toggle('timer-critical',state.timer.remaining<=10);if(mode==='steal'&&state.timer.remaining>0&&lastStealTick!==state.timer.remaining){lastStealTick=state.timer.remaining;if(soundModeSel.value!=='off'){stealTick.volume=audio.volume;stealTick.currentTime=0;stealTick.play().catch(()=>{});}}if(mode!=='steal'&&state.timer.remaining<=10&&!state.timer.warned){state.timer.warned=true;startPressure();guileBrief('Ten seconds. Stay focused.');}if(state.timer.remaining>0)return;const expiredMode=state.timer.mode;stopTimer();if(typeof onExpire==='function')return onExpire();if(expiredMode==='dd-wager'){markUsed();closeClue();return;}const [cat,row]=state.activeKey.split('::');const clue=state.board.clueFor(cat,Number(row));sfxTimesUp();if(expiredMode==='steal'){showDebrief(clue,false);return;}continueAfterMiss(clue,'Time expired.');},250);
       state.timer.warned=false;updateQuestionPauseButton();sendSnapshot();
     }
     function stopTimer(){
-      stopPressure();
+      stopPressure();stealTick.pause();stealTick.currentTime=0;
       deadline=0;buzzerActive=false;firstBuzzer=null;
       if (state.timer.id) clearInterval(state.timer.id);
       state.timer.id=null;
@@ -921,7 +925,7 @@
       state.timer.paused = !state.timer.paused;
       if(!state.timer.paused)deadline=Date.now()+state.timer.remaining*1000;
       checkpoint();sendSnapshot();
-      if (state.timer.paused) {pauseQuestionBeat();stopPressure();} else {if (state.timer.mode === "main") resumeQuestionBeat();if(state.timer.warned)startPressure();}
+      if (state.timer.paused) {pauseQuestionBeat();stopPressure();stealTick.pause();} else {if (state.timer.mode === "main") resumeQuestionBeat();if(state.timer.warned)startPressure();}
       timerEl.textContent = state.timer.paused
         ? `${state.timer.remaining}s (paused)`
         : `${state.timer.remaining}s`;
@@ -1548,14 +1552,14 @@
       $('phasePageTitle').textContent=title;$('phasePageDescription').textContent=description;
       document.title=title+' | VA MDE Triage Jeopardy';
       history.replaceState(null,'','#'+screen);
-      if(changed){playStageSound(screen);document.body.classList.remove('phase-enter');void document.body.offsetWidth;document.body.classList.add('phase-enter');window.scrollTo({top:0,behavior:'instant'});if(!['landing','lobby'].includes(screen))$('phasePageTitle').focus({preventScroll:true});}
+      if(changed){syncLandingBed();playStageSound(screen);document.body.classList.remove('phase-enter');void document.body.offsetWidth;document.body.classList.add('phase-enter');window.scrollTo({top:0,behavior:'instant'});if(!['landing','lobby'].includes(screen))$('phasePageTitle').focus({preventScroll:true});}
     }
     function logAction(action,detail){audit.push({at:new Date().toISOString(),action,detail});if(audit.length>200)audit.shift();}
     function captureBoard(){if(!state.board)return null;return {cfg:state.board.cfg,categories:state.board.categories,rows:state.board.rows,dd:[...state.board.dailyDoubles],clues:state.board.categories.flatMap(c=>state.board.rows.map(r=>[state.board.keyFor(c,r),state.board.clueFor(c,r)]))};}
     function serializeMission(){return {version:2,savedAt:Date.now(),gameId,phase,questionId,revision,attempted:[...attempted],players:state.players,ready:[...state.ready],round:state.round,controlIdx:state.controlIdx,used:[...state.used],activeKey:state.activeKey,clueAttempts:state.clueAttempts,clueStartIdx:state.clueStartIdx,ddLockedWager:state.ddLockedWager,board:captureBoard(),questionSeconds:state.timer.paused?state.timer.remaining:MissionCore.remaining(deadline),timerMode:state.timer.mode,gameSeconds:state.gameClock.paused?state.gameClock.remaining:gameDeadline?MissionCore.remaining(gameDeadline):state.gameClock.remaining,finalSeconds:state.final.paused?state.final.timerRemaining:MissionCore.remaining(finalDeadline),final:{step:state.final.step,idx:state.final.idx,wagers:[...state.final.wagers],answers:[...state.final.answers]},finalJeopardy,sessions:[...playerSessions],reviewHistory,audit,settings:Object.fromEntries(['qSeconds','stealSeconds','categoryCount','qPerCat','startValue','valueStep','randomizeBoard','roundSelect','dailyDoubles','dailyDoubleCount','soundMode','volume','autoStart','requireReady'].map(id=>[id,$(id).value]))};}
     function checkpoint(){if(!engineReady)return;try{localStorage.setItem('mission-save-'+roomCode,JSON.stringify(serializeMission()));$('recoveryStatus').textContent='Checkpoint saved '+new Date().toLocaleTimeString();}catch(e){$('recoveryStatus').textContent='Checkpoint unavailable; export a recovery file.';}}
     function scorePayload(){return MissionCore.ranks(state.players).map(({player:p,index,rank})=>({id:playerId(index),name:p.name,score:p.score,rank,connected:Date.now()-(presence.get(p.id)||0)<15000,ready:!!state.ready.get(index)}));}
-    function publicSnapshot(targetId=null){const p=state.players[state.controlIdx];return {type:'snapshot',targetId,gameId,revision:++revision,phase,questionId,serverNow:Date.now(),controller:p?.name||'',controllerId:p?playerId(state.controlIdx):null,attempted:[...attempted],deadline,paused:state.final.step==='answers'?!!state.final.paused:!!state.timer.paused,remaining:state.final.step==='answers'?state.final.timerRemaining:state.timer.remaining,gameDeadline,finalDeadline,scores:scorePayload(),board:mobileBoardState(),question:state.activeKey?{category:clueCatEl.textContent,value:clueValueEl.textContent,text:questionText.textContent}:null,final:{category:finalJeopardy?.category,clue:['answers','reveal','complete'].includes(state.final.step)?finalJeopardy?.text:'',wagered:[...state.final.wagers.keys()].map(i=>playerId(i)),answered:[...state.final.answers.keys()].map(i=>playerId(i))},debrief:phase===P.DEBRIEF?reviewHistory.at(-1):null,guile:$('guileMessage').textContent};}
+    function publicSnapshot(targetId=null){const p=state.players[state.controlIdx];return {type:'snapshot',targetId,gameId,revision:++revision,phase,questionId,serverNow:Date.now(),audio:{muted:soundModeSel.value==='off',volume:audio.volume},controller:p?.name||'',controllerId:p?playerId(state.controlIdx):null,attempted:[...attempted],deadline,paused:state.final.step==='answers'?!!state.final.paused:!!state.timer.paused,remaining:state.final.step==='answers'?state.final.timerRemaining:state.timer.remaining,gameDeadline,finalDeadline,scores:scorePayload(),board:mobileBoardState(),question:state.activeKey?{category:clueCatEl.textContent,value:clueValueEl.textContent,text:questionText.textContent}:null,final:{category:finalJeopardy?.category,clue:['answers','reveal','complete'].includes(state.final.step)?finalJeopardy?.text:'',wagered:[...state.final.wagers.keys()].map(i=>playerId(i)),answered:[...state.final.answers.keys()].map(i=>playerId(i))},debrief:phase===P.DEBRIEF?reviewHistory.at(-1):null,guile:$('guileMessage').textContent};}
     function sendSnapshot(targetId=null){if(!engineReady)return;broadcastToBuzzers(publicSnapshot(targetId));}
     function updateMissionHUD(){if(!$('missionPhase'))return;$('missionPhase').textContent=phase.replace(/-/g,' ').toUpperCase();$('missionController').textContent=state.players[state.controlIdx]?.name||'—';$('missionConnection').textContent=realtimeEnabled?(realtimeReady?'ONLINE RELAY READY':'RECONNECTING'):'LOCAL DEVICES ONLY';$('missionClock').textContent=state.final.step==='answers'?`${state.final.timerRemaining}s`:state.timer.id?`${state.timer.remaining}s${state.timer.paused?' PAUSED':''}`:formatClock(state.gameClock.remaining);$('lockMissingWagers').disabled=phase!==P.FINAL_WAGER;$('undoRuling').disabled=undoHistory.length===0;$('answerTimeProgress').max=state.timer.mode.startsWith('steal')?Number(stealSecondsInput.value):Number(qSecondsInput.value);$('answerTimeProgress').value=state.timer.remaining;}
     function bindClient(data){const client=String(data.clientId||'');if(!client||client.length>100)return null;const existing=playerSessions.get(client);if(existing)return state.players.find(p=>p.id===existing)||null;if(data.type!=='join')return null;let p=state.players.find(p=>sameName(p.name,data.player));if(p&&[...playerSessions.values()].includes(p.id)){broadcastToBuzzers({type:'join-ack',targetId:client,player:data.player,registered:false,reason:'That name is already connected. Choose another name.'});return null;}if(!p){if(![P.LOBBY,P.BRIEFING].includes(phase))return null;const registration=registerBuzzerPlayer(String(data.player||'').slice(0,40));if(!registration.ok)return null;p=state.players[registration.index];}if(!p.id)p.id=MissionCore.id();playerSessions.set(client,p.id);checkpoint();return p;}
@@ -1569,7 +1573,7 @@
       if(['heartbeat','sync-request'].includes(data.type)){sendSnapshot(data.clientId);return;}
       if(data.type!=='join'&&data.type!=='leave'&&data.gameId!==gameId){sendSnapshot(data.clientId);return;}
       if(['answer','buzz','pass','select-clue'].includes(data.type)&&data.questionId!==questionId){sendSnapshot(data.clientId);return;}
-      if(data.type==='ready'){if([P.LOBBY,P.BRIEFING].includes(phase)){const i=state.players.indexOf(p);state.ready.set(i,!!data.ready);if(phase===P.BRIEFING){renderWaitingRoom();updateBeginEnabled();}sendSnapshot();checkpoint();}return;}
+      if(data.type==='ready'){if([P.LOBBY,P.BRIEFING].includes(phase)){const i=state.players.indexOf(p);const wasReady=!!state.ready.get(i),wasAllReady=allReady();state.ready.set(i,!!data.ready);readySound(wasReady,wasAllReady,i);if(phase===P.BRIEFING){renderWaitingRoom();updateBeginEnabled();}sendSnapshot();checkpoint();}return;}
       if(data.type==='pass'){if(MissionCore.canAnswer(phase,playerId(state.controlIdx),p.id,state.timer.paused))handlePass();else sendSnapshot(data.clientId);return;}
       handleBuzzerMessage(data);sendSnapshot(data.clientId);checkpoint();
     }

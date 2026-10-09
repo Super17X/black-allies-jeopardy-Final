@@ -83,3 +83,8 @@ body[data-screen=selection] #toggleRankings,body[data-screen=lobby] #toggleRanki
 .phone-command #buzzerBtn{min-height:96px;font-size:24px;box-shadow:0 12px 25px #0005}
 .phone-command body[data-player-phase=answering] #buzzerBtn,.phone-command body[data-player-phase=steal-answering] #buzzerBtn{display:none}
 @media(max-width:700px){#qaPane{padding:20px}#questionText{font-size:24px;padding:20px 0;min-height:150px}#answerInput,#submitBtn,#passBtn{width:100%}#qaPane .row:has(#answerInput){display:flex;flex-direction:column;align-items:stretch}#toggleRankings{font-size:11px;padding:8px 12px}}
+
+/* Lobby briefing occupies its own row so it never covers setup controls. */
+body:has(#guileHost)[data-screen=lobby]{padding-bottom:40px}
+body[data-screen=lobby] #guileHost{position:relative;right:auto;bottom:auto;z-index:auto;margin:18px 0 18px auto;max-width:100%}
+body[data-screen=lobby] .mission-hud{position:static}

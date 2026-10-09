@@ -1,0 +1,6 @@
+{
+  "name": "va-mde-triage-mission-game",
+  "private": true,
+  "scripts": {"test":"node --test tests/core.cjs", "test:browser":"node tests/integration.cjs"},
+  "devDependencies": {"playwright":"1.62.1", "jsqr":"1.4.0", "pngjs":"7.0.0"}
+}

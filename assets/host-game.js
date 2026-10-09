@@ -547,6 +547,7 @@
 
 
     function backToLobby(){
+      setPhase(P.LOBBY);
       if (waitingCountdownId) clearInterval(waitingCountdownId);
       waitingCountdownId=null;
       waitingRoomPane.style.display="none";
@@ -1225,6 +1226,7 @@
       finalPane.style.display="none";
       waitingRoomPane.style.display="none";
       lobbyPane.style.display="block";
+      setPhase(P.LOBBY);
       $("buzzerPanel").style.display="none";
 
 
@@ -1506,7 +1508,30 @@
     const audit=[],reviewHistory=[],undoHistory=[];
     let debriefTimeout=null;
     function playerId(index){const p=state.players[index];if(p&&!p.id)p.id=MissionCore.id();return p?.id;}
-    function setPhase(next){if(!Object.values(P).includes(next))throw Error('Unknown mission phase');phase=next;document.body.classList.toggle('mission-playing',![P.LOBBY,P.BRIEFING].includes(next));revision++;if(engineReady){updateMissionHUD();checkpoint();sendSnapshot();}}
+    function setPhase(next){if(!Object.values(P).includes(next))throw Error('Unknown mission phase');phase=next;document.body.classList.toggle('mission-playing',![P.LOBBY,P.BRIEFING].includes(next));renderPhasePage(next);revision++;if(engineReady){updateMissionHUD();checkpoint();sendSnapshot();}}
+    const phasePages={
+      'landing':['Landing','Enter the lobby to assemble your squad.'],
+      'lobby':['Mission lobby','Add players or share the QR link, then enter the readiness briefing.'],
+      'briefing':['Readiness briefing','Confirm the squad is ready before launching the mission.'],
+      'selection':['Game board','The player in command selects the next objective.'],
+      'daily-double-wager':['Daily Double wager','Lock a wager before the answer clock begins.'],
+      'answering':['Answer the objective','The player in command answers first.'],
+      'steal-open':['Steal window','Eligible squad members may buzz. The first accepted buzz wins.'],
+      'steal-answering':['Steal attempt','The player who claimed the steal now answers.'],
+      'debrief':['Answer review','Review the accepted answer before returning to the board.'],
+      'final-wager':['Final: secret wagers','Lock all wagers before revealing the final objective.'],
+      'final-answer':['Final: answer','Submit the final answer before the two-minute clock expires.'],
+      'final-reveal':['Final: reveal','All submissions are locked. Reveal the final standings.'],
+      'results':['Mission results','Final scores, champions and training review.']
+    };
+    function renderPhasePage(screen){
+      const changed=document.body.dataset.screen!==screen;document.body.dataset.screen=screen;
+      const [title,description]=phasePages[screen]||phasePages.lobby;
+      $('phasePageTitle').textContent=title;$('phasePageDescription').textContent=description;
+      document.title=title+' | VA MDE Triage Jeopardy';
+      history.replaceState(null,'','#'+screen);
+      if(changed){window.scrollTo({top:0,behavior:'instant'});if(!['landing','lobby'].includes(screen))$('phasePageTitle').focus({preventScroll:true});}
+    }
     function logAction(action,detail){audit.push({at:new Date().toISOString(),action,detail});if(audit.length>200)audit.shift();}
     function captureBoard(){if(!state.board)return null;return {cfg:state.board.cfg,categories:state.board.categories,rows:state.board.rows,dd:[...state.board.dailyDoubles],clues:state.board.categories.flatMap(c=>state.board.rows.map(r=>[state.board.keyFor(c,r),state.board.clueFor(c,r)]))};}
     function serializeMission(){return {version:2,savedAt:Date.now(),gameId,phase,questionId,revision,attempted:[...attempted],players:state.players,ready:[...state.ready],round:state.round,controlIdx:state.controlIdx,used:[...state.used],activeKey:state.activeKey,clueAttempts:state.clueAttempts,clueStartIdx:state.clueStartIdx,ddLockedWager:state.ddLockedWager,board:captureBoard(),questionSeconds:state.timer.paused?state.timer.remaining:MissionCore.remaining(deadline),timerMode:state.timer.mode,gameSeconds:state.gameClock.paused?state.gameClock.remaining:gameDeadline?MissionCore.remaining(gameDeadline):state.gameClock.remaining,finalSeconds:state.final.paused?state.final.timerRemaining:MissionCore.remaining(finalDeadline),final:{step:state.final.step,idx:state.final.idx,wagers:[...state.final.wagers],answers:[...state.final.answers]},finalJeopardy,sessions:[...playerSessions],reviewHistory,audit,settings:Object.fromEntries(['qSeconds','stealSeconds','categoryCount','qPerCat','startValue','valueStep','randomizeBoard','roundSelect','dailyDoubles','dailyDoubleCount','soundMode','volume','autoStart','requireReady'].map(id=>[id,$(id).value]))};}
@@ -1547,9 +1572,9 @@
       else{scoreBoard.style.display='block';renderScoreboard();renderBoard();if(state.final.step!=='off'){finalPane.style.display='block';renderFinalUI();if(phase===P.FINAL_ANSWER){startFinalTimer(saved.finalSeconds||120);state.final.paused=true;}}
         else if(state.activeKey){qaPane.style.display='block';const [cat,row]=state.activeKey.split('::');const clue=state.board.clueFor(cat,Number(row));questionText.textContent=clue.text;clueCatEl.textContent=cat;clueValueEl.textContent='$'+state.board.valueForRow(Number(row));qaHeader.textContent=(state.players[state.controlIdx]?.name||'')+"'s recovered question";ddWagerRow.style.display=phase===P.WAGER?'block':'none';if(phase===P.DEBRIEF)closeClue();else{startTimer(Math.max(1,saved.questionSeconds),saved.timerMode);state.timer.paused=true;updateQuestionPauseButton();}}else{boardPane.style.display='block';setPhase(P.BOARD);}
       }
-      gameDeadline=0;state.gameClock.paused=true;$('pauseMission').textContent='Resume mission';$('recoveryPanel').hidden=true;document.body.classList.toggle('mission-playing',![P.LOBBY,P.BRIEFING].includes(phase));guileBrief('Mission recovered. Resume the mission and active question when everyone is ready.');checkpoint();sendSnapshot();}
+      gameDeadline=0;state.gameClock.paused=true;$('pauseMission').textContent='Resume mission';$('recoveryPanel').hidden=true;document.body.classList.toggle('mission-playing',![P.LOBBY,P.BRIEFING].includes(phase));guileBrief('Mission recovered. Resume the mission and active question when everyone is ready.');renderPhasePage(phase);checkpoint();sendSnapshot();}
     function renderTrainingReview(){const counts=new Map();for(const r of reviewHistory)if(!r.correct)counts.set(r.category,(counts.get(r.category)||0)+1);const html=`<h3>Training debrief</h3><p>${reviewHistory.filter(r=>r.correct).length}/${reviewHistory.length} objectives answered correctly.</p><p>Review topics: ${[...counts].map(([c,n])=>`${escapeHtml(c)} (${n})`).join(', ')||'No missed topics recorded.'}</p><details><summary>Review every completed objective</summary>${reviewHistory.map(r=>`<article class="review-item"><strong>${escapeHtml(r.category)}</strong><p>${escapeHtml(r.question)}</p><p>${escapeHtml(r.explanation)}</p></article>`).join('')}</details>`;$('trainingReview').innerHTML=html;}
-    function initializeMission(){engineReady=true;let saved=null;try{saved=JSON.parse(localStorage.getItem('mission-save-'+roomCode));}catch{}if(saved&&saved.players?.length){$('recoveryPanel').hidden=false;$('restoreCheckpoint').onclick=()=>restoreMission(saved);}
+    function initializeMission(){engineReady=true;renderPhasePage(location.hash==='#lobby'?'lobby':'landing');$('enterLobby').onclick=()=>setPhase(P.LOBBY);let saved=null;try{saved=JSON.parse(localStorage.getItem('mission-save-'+roomCode));}catch{}if(saved&&saved.players?.length){$('recoveryPanel').hidden=false;$('restoreCheckpoint').onclick=()=>restoreMission(saved);}
       $('pauseMission').onclick=()=>{state.gameClock.paused=!state.gameClock.paused;if(!state.gameClock.paused){if(!state.gameClock.id&&state.final.step==='off')startGameClock(state.gameClock.remaining);else gameDeadline=Date.now()+state.gameClock.remaining*1000;}$('pauseMission').textContent=state.gameClock.paused?'Resume mission':'Pause mission';checkpoint();sendSnapshot();};
       $('acceptAnswer').onclick=()=>{if(!state.activeKey||![P.ANSWER,P.STEAL_ANSWER].includes(phase))return;const [c,r]=state.activeKey.split('::');answerInput.value=state.board.clueFor(c,Number(r)).answers[0];logAction('accept-equivalent',state.players[state.controlIdx].name);handleSubmit();};
       $('undoRuling').onclick=undoRuling;$('applyScore').onclick=()=>{const i=Number($('scorePlayer').value),score=Number($('scoreCorrection').value);if(!state.players[i]||!Number.isSafeInteger(score))return;rememberRuling();logAction('score-correction',{player:state.players[i].name,from:state.players[i].score,to:score});state.players[i].score=score;renderScoreboard();checkpoint();sendSnapshot();};

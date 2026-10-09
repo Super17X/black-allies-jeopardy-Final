@@ -307,7 +307,7 @@
   </div>
 
 
-  <header class="hero">
+  <header class="hero" id="landingHero">
     <div class="mission-kicker">GUILE / MISSION COMMANDER</div><h1>VA MDE TRIAGE<span>JEOPARDY</span></h1><img class="hero-art" src="assets/guile-command.png" alt="Guile from Street Fighter, your mission commander" fetchpriority="high" />
     <p>Sharpen your triage skills. Take command of the board.<br>One squad. Fifteen minutes. Every answer counts.</p><div class="mission-metrics"><div><strong>15:00</strong>MISSION CLOCK</div><div><strong>02:00</strong>FINAL CHALLENGE</div><div><strong>LIVE</strong>SQUAD PLAY</div></div>
     <p class="tiny" style="position:relative;z-index:2;color:#e1dfc6">Training simulation • Follow current VA policy and official procedures for operational decisions.</p>
@@ -315,6 +315,14 @@
 
 
 
+  <div id="landingActions"><button class="btn ok" id="enterLobby">Enter mission lobby</button></div>
+  <header id="lobbyHero" class="hero lobby-hero" aria-label="Mission lobby">
+    <div class="mission-kicker">GUILE / MISSION COMMANDER</div><h1>VA MDE TRIAGE<span>JEOPARDY</span></h1>
+    <img class="lobby-art" src="assets/guile-command.png" alt="Guile, your mission commander" />
+    <p>Sharpen your triage skills. Take command of the board.<br>Assemble your squad and prepare for the mission.</p>
+    <div class="mission-metrics"><div><strong>15:00</strong>MISSION CLOCK</div><div><strong>02:00</strong>FINAL CHALLENGE</div><div><strong>LIVE</strong>SQUAD PLAY</div></div>
+  </header>
+  <nav id="phasePageHeader" aria-label="Current game page"><span>MISSION COMMAND</span><h1 id="phasePageTitle" tabindex="-1">Landing</h1><p id="phasePageDescription"></p></nav>
   <section class="guile-host" id="guileHost" data-reaction="idle" aria-label="Guile mission briefing"><img src="assets/guile-command.png" alt="Guile" /><div><strong>GUILE / FIELD BRIEFING</strong><p id="guileMessage" role="status" aria-live="polite">Welcome to mission command. Assemble your squad, scan the player QR code, and get ready.</p></div></section>
   <div class="mission-hud" aria-label="Live mission status"><span id="missionPhase">LOBBY</span><span>COMMAND: <b id="missionController">—</b></span><span id="missionClock">15:00</span><span id="missionConnection">CONNECTING</span></div>
   <section id="recoveryPanel" class="card" hidden><h2>Saved mission found</h2><p>Restore your players, scores and active objective. Recovered clocks stay paused until you resume them.</p><button class="btn ok" id="restoreCheckpoint">Restore checkpoint</button><button class="btn" onclick="this.closest('section').hidden=true">Start fresh</button></section>

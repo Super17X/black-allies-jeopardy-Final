@@ -36,3 +36,35 @@ body:has(#guileHost) .hero h1{font-size:clamp(38px,4.4vw,64px);text-shadow:0 3px
 body:has(#guileHost) .hero p{background:#07130cc9;border-radius:8px;padding:10px 12px;font-size:13px}
 body:has(#guileHost) .mission-metrics{background:#07130cc9;border-radius:8px;padding:12px 14px}
 @media(max-width:700px){body:has(#guileHost) .hero{min-height:0;padding:calc((100vw - 26px)*.5625 + 24px) 20px 46px;background:linear-gradient(180deg,transparent 0%,#0a191400 20%,#0a1914 45%),url('futuristic-military-base.webp') center top/100% auto no-repeat;background-color:#0a1914}body:has(#guileHost) .hero::before{display:none}body:has(#guileHost) .hero h1{font-size:36px}body:has(#guileHost) .hero p{background:none;padding:0}body:has(#guileHost) .mission-metrics{padding:12px 0;background:none}}
+
+/* Phase pages share one live session and show only the current stage. */
+#landingHero,#landingActions,#lobbyHero,#phasePageHeader{display:none}
+body[data-screen] #lobbyPane,body[data-screen] #waitingRoomPane,body[data-screen] #boardPane,body[data-screen] #qaPane,body[data-screen] #finalPane,body[data-screen] #summaryPane,body[data-screen] #scoreBoard{display:none!important}
+body[data-screen=landing] #landingHero,body[data-screen=landing] #landingActions{display:flex!important}
+#landingActions{justify-content:center;margin:28px 0}#enterLobby{min-width:260px;font-size:18px;padding:17px 28px}
+body[data-screen=landing] .mission-hud,body[data-screen=landing] .host-tools,body[data-screen=landing] #ticker{display:none!important}
+body[data-screen=lobby] #lobbyHero,body[data-screen=lobby] #lobbyPane{display:block!important}
+body[data-screen=briefing] #waitingRoomPane{display:block!important}
+body[data-screen=selection] #boardPane{display:block!important}
+body[data-screen=answering] #qaPane,body[data-screen=daily-double-wager] #qaPane,body[data-screen=steal-open] #qaPane,body[data-screen=steal-answering] #qaPane{display:block!important}
+body[data-screen=selection] #scoreBoard,body[data-screen=answering] #scoreBoard,body[data-screen=daily-double-wager] #scoreBoard,body[data-screen=steal-open] #scoreBoard,body[data-screen=steal-answering] #scoreBoard{display:block!important}
+body[data-screen=final-wager] #finalPane,body[data-screen=final-answer] #finalPane,body[data-screen=final-reveal] #finalPane{display:block!important}
+body[data-screen=results] #summaryPane{display:block!important}
+body[data-screen]:not([data-screen=landing]):not([data-screen=lobby]) #phasePageHeader{display:block}
+#phasePageHeader{margin:0 0 22px;padding:24px 28px;border-left:3px solid #dabc77;background:#102117ed;border-radius:8px}
+#phasePageHeader>span{font:10px ui-monospace,monospace;color:#dabc77;letter-spacing:.2em}
+#phasePageHeader h1{font-size:clamp(26px,4vw,42px);color:#f4ecd5;margin:8px 0;line-height:1.15}
+#phasePageHeader p{margin:0;color:#bbcab5;line-height:1.5;font-size:14px}
+body[data-screen=lobby],body[data-screen=briefing]{background:linear-gradient(#0b120ee0,#101a13f5),url('army-multicam.svg') center/600px fixed}
+body:has(#guileHost) #lobbyHero{position:relative;min-height:520px;padding:64px 42% 50px 48px;background:linear-gradient(90deg,#111c14f7,#192c20d9,#16261cb0),url('army-multicam.svg') center/cover;overflow:hidden}
+#lobbyHero .lobby-art{position:absolute;right:4%;bottom:0;width:37%;height:96%;object-fit:contain;object-position:bottom}
+body:has(#guileHost) #lobbyHero h1{font-size:clamp(40px,5vw,74px)}
+body:has(#guileHost) #lobbyHero p,body:has(#guileHost) #lobbyHero .mission-metrics{background:none;padding:0}
+body[data-screen=steal-open] #phasePageHeader,body[data-screen=steal-answering] #phasePageHeader{border-color:#f2aa4a;background:#312717ee}
+body[data-screen^=final-] #phasePageHeader{background:linear-gradient(120deg,#12252b,#142318);border-color:#87d8da}
+body[data-screen=results] #phasePageHeader{border-color:#edd391;background:linear-gradient(120deg,#352a15,#142318)}
+body[data-screen=debrief] #correctAnswerOverlay{background:#101e16;backdrop-filter:none;flex-direction:column}
+@media(max-width:700px){body:has(#guileHost) #lobbyHero{min-height:430px;padding:48px 35% 42px 20px}body:has(#guileHost) #lobbyHero h1{font-size:32px}#lobbyHero .lobby-art{right:-5%;width:47%;height:82%}body:has(#guileHost) #lobbyHero p{font-size:12px}#phasePageHeader{padding:18px}#phasePageHeader p{font-size:12px}}
+
+body:has(#guileHost)[data-screen=lobby],body:has(#guileHost)[data-screen=briefing]{background:linear-gradient(#0b120ee0,#101a13f5),url('army-multicam.svg') center/600px fixed}
+body:has(#guileHost) #lobbyHero{background-image:linear-gradient(90deg,#111c14f7,#192c20d9,#16261cb0),url('army-multicam.svg')!important;background-size:cover!important}

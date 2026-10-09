@@ -8,7 +8,7 @@
   const canAnswer=(phase,controller,player,paused)=>!paused&&[PHASES.ANSWER,PHASES.STEAL_ANSWER].includes(phase)&&controller===player;
   const canBuzz=(phase,attempted,player,paused)=>!paused&&phase===PHASES.STEAL&&!attempted.includes(player);
   class Ledger{constructor(limit=1000){this.seen=new Map();this.limit=limit;}has(id){return this.seen.has(id);}add(id){this.seen.set(id,Date.now());while(this.seen.size>this.limit)this.seen.delete(this.seen.keys().next().value);}}
-  const answerKey=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/^(?:what|who)\s+(?:is|are|was|were)\s+/,'').replace(/^(?:a|an|the)\s+/,'').replace(/[^a-z0-9]/g,'');
+  const answerKey=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f\u200b-\u200d\ufeff]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[’']/g,'').replace(/[^a-z0-9\s]/g,' ').trim().replace(/^(?:what|who)\s+(?:is|are|was|were)\s+/,'').replace(/^(?:whats|whos)\s+/,'').replace(/^(?:a|an|the)\s+/,'').replace(/\s/g,'');
   function rotatePool(items,previous=[],count=1,rng=Math.random){
     const unique=[...new Map(items.map(item=>[JSON.stringify(item),item])).entries()];
     if(count>unique.length)throw Error('Not enough distinct questions');

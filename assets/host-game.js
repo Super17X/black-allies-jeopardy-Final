@@ -245,9 +245,10 @@
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
     const stageSounds = Object.fromEntries(Object.entries({'final-wager':'isac_enter_dark_zone.mp3',results:'trumpet.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
-    const landingBed=new Audio('assets/hard_work_cadence.mp3');landingBed.preload='none';landingBed.loop=true;
+    const landingBed=new Audio('assets/hard_work_cadence.mp3');landingBed.preload='auto';landingBed.loop=false;
+    let landingBedStarted=false,landingBedFinished=false;landingBed.addEventListener('ended',()=>{landingBedFinished=true;});
     const readyCue=new Audio('assets/orders_received.mp3'),allReadyCue=new Audio('assets/platoon_attention.mp3'),stealTick=new Audio('assets/m1_garand_notification.mp3');
-    function syncLandingBed(){if(['landing','lobby'].includes(document.body.dataset.screen)&&soundModeSel.value!=='off'){landingBed.volume=audio.volume;landingBed.play().catch(()=>{});}else{landingBed.pause();landingBed.currentTime=0;}}
+    function syncLandingBed(){landingBed.volume=audio.volume;if(soundModeSel.value==='off'){landingBed.pause();return;}if(landingBedFinished)return;if(!landingBedStarted&&!['landing','lobby'].includes(document.body.dataset.screen))return;if(!landingBed.paused)return;landingBedStarted=true;landingBed.play().catch(()=>{landingBedStarted=false;});}
     function readySound(wasReady,wasAllReady,index){if(!wasReady&&state.ready.get(index)){playResultSound(readyCue);if(!wasAllReady&&allReady())playResultSound(allReadyCue);}}
     const pressureSound=new Audio('assets/beating_hearts.mp3');pressureSound.preload='none';pressureSound.loop=true;
     function stopPressure(){pressureSound.pause();pressureSound.currentTime=0;syncQuestionBeatVolume();}

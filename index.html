@@ -324,9 +324,11 @@
   </header>
   <nav id="phasePageHeader" aria-label="Current game page"><span>MISSION COMMAND</span><h1 id="phasePageTitle" tabindex="-1">Landing</h1><p id="phasePageDescription"></p></nav>
   <section class="guile-host" id="guileHost" data-reaction="idle" aria-label="Guile mission briefing"><img src="assets/guile-command.png" alt="Guile" /><div><strong>GUILE / FIELD BRIEFING</strong><p id="guileMessage" role="status" aria-live="polite">Welcome to mission command. Assemble your squad, scan the player QR code, and get ready.</p></div></section>
-  <div class="mission-hud" aria-label="Live mission status"><span id="missionPhase">LOBBY</span><span>COMMAND: <b id="missionController">—</b></span><span id="missionClock">15:00</span><span id="missionConnection">CONNECTING</span></div>
+  <div class="mission-hud" aria-label="Live mission status"><span id="missionPhase">LOBBY</span><span>COMMAND: <b id="missionController">—</b></span><span id="missionClock">15:00</span><span id="missionConnection">CONNECTING</span><button class="btn alt" id="toggleRankings">Show rankings</button></div>
   <section id="recoveryPanel" class="card" hidden><h2>Saved mission found</h2><p>Restore your players, scores and active objective. Recovered clocks stay paused until you resume them.</p><button class="btn ok" id="restoreCheckpoint">Restore checkpoint</button><button class="btn" onclick="this.closest('section').hidden=true">Start fresh</button></section>
-  <details class="card host-tools"><summary>Host command tools</summary><div class="row"><button class="btn" id="muteMission">Mute</button><button class="btn" id="pauseMission">Pause mission</button><button class="btn ok" id="acceptAnswer">Accept equivalent answer</button><button class="btn" id="undoRuling">Undo last ruling</button><button class="btn" id="lockMissingWagers">Lock missing wagers at $0</button></div><div class="row"><label for="scorePlayer">Player</label><select id="scorePlayer"></select><label for="scoreCorrection">Corrected score</label><input id="scoreCorrection" type="number" step="1" /><button class="btn" id="applyScore">Apply score</button></div><div class="row"><button class="btn" id="exportRecovery">Export recovery</button><label class="btn">Import recovery<input id="importRecovery" type="file" accept="application/json" /></label><label><input id="reducedMotion" type="checkbox" /> Reduced motion</label></div><p id="recoveryStatus" class="tiny">Automatic checkpoints enabled.</p></details>
+  <details class="card host-tools"><summary>Host command tools</summary><div class="row"><button class="btn" id="muteMission">Mute</button><button class="btn" id="pauseMission">Pause mission</button><button class="btn ok" id="acceptAnswer">Accept equivalent answer</button><button class="btn" id="undoRuling">Undo last ruling</button><button class="btn" id="lockMissingWagers">Lock missing wagers at $0</button></div><div class="row"><label for="scorePlayer">Player</label><select id="scorePlayer"></select><label for="scoreCorrection">Corrected score</label><input id="scoreCorrection" type="number" step="1" /><button class="btn" id="applyScore">Apply score</button></div><div class="row"><button class="btn" id="exportRecovery">Export recovery</button><label class="btn">Import recovery<input id="importRecovery" type="file" accept="application/json" /></label><label><input id="reducedMotion" type="checkbox" /> Reduced motion</label></div><div class="row">      <button id="buzzerBtn" class="btn alt">Play Buzzer Sound</button>
+      <button id="showBuzzerPanelBtn" class="btn alt">📱 Virtual Buzzer</button>
+</div><p id="recoveryStatus" class="tiny">Automatic checkpoints enabled.</p></details>
   <div id="lobbyPane" class="card">
     <h2 style="margin:0 0 10px;color:var(--gold2)">01 / Assemble your squad</h2>
 
@@ -376,7 +378,7 @@
 
 
     <div class="row">
-      <label for="randomizeBoard" class="mono tiny">Randomize board:</label>
+      <label for="randomizeBoard" class="mono tiny">Shuffle categories:</label>
       <select id="randomizeBoard" aria-label="Randomize board">
         <option value="on" selected>On</option>
         <option value="off">Off</option>
@@ -443,7 +445,7 @@
 
     <div class="spacer"></div>
     <p class="mission-help">Mission rules: the player in control answers first. A miss or pass opens a 10-second steal window for eligible players; the first buzz wins. Final challenge: secret wagers and a two-minute answer timer.</p>
-    <div id="lobbyList" class="mono tiny"></div>
+    <p class="mission-help">Questions rotate from the MDE pool each game. Short answers are accepted; no “What is” phrasing is required.</p><div id="lobbyList" class="mono tiny"></div>
   </div>
 
 
@@ -523,7 +525,7 @@
 
 
     <div class="spacer"></div>
-    <div id="questionText"></div>
+    <div id="questionText"></div><progress id="answerTimeProgress" max="30" value="30" aria-label="Answer time remaining"></progress>
 
 
     <div class="spacer"></div>
@@ -543,13 +545,11 @@
 
     <div class="row">
       <label for="answerInput" class="mono tiny sr-only">Your answer:</label>
-      <input id="answerInput" placeholder="Type answer…" style="flex:1" aria-label="Your answer" />
+      <input id="answerInput" placeholder="Type your answer…" autocomplete="off" enterkeyhint="send" style="flex:1" aria-label="Your answer" />
       <button id="submitBtn" class="btn ok">Submit</button>
       <button id="passBtn" class="btn">Pass</button>
-      <button id="buzzerBtn" class="btn alt">Play Buzzer Sound</button>
-      <button id="showBuzzerPanelBtn" class="btn alt">📱 Virtual Buzzer</button>
     </div>
-    <div class="mono tiny" style="text-align:center;margin-top:7px">Answers are not case-sensitive—capitalization and accent marks do not matter.</div>
+    <div class="mono tiny" style="text-align:center;margin-top:7px">Type the fact or name. “What is” is optional. Press Enter to submit.</div>
 
 
     <div class="spacer"></div>

@@ -196,9 +196,9 @@
         .replace(/[^a-z0-9]/g,"");
     }
     function isCorrectAnswer(given, accepted) {
-      const g = normalize(given);
+      const g = MissionCore.answerKey(given);
       if (!g) return false;
-      return accepted.some(a => normalize(a) === g);
+      return accepted.some(a => MissionCore.answerKey(a) === g);
     }
     function shuffle(a){
       for (let i=a.length-1;i>0;i--){
@@ -590,9 +590,17 @@
     }
 
 
+    function rotatingQuestions(category,pool,count){
+      let history={};try{history=JSON.parse(localStorage.getItem('mde-question-rotation-v1'))||{};}catch{}
+      if(typeof history!=='object'||Array.isArray(history))history={};
+      const draw=MissionCore.rotatePool(pool,Array.isArray(history[category])?history[category]:[],count);
+      history[category]=draw.history;try{localStorage.setItem('mde-question-rotation-v1',JSON.stringify(history));}catch{}
+      return draw.items;
+    }
     function buildBoard(cfg){
       const isRound2 = cfg.round === 2;
-      const baseBank = isRound2 ? seededBankRound2 : seededBankRound1;
+      const bankOrder=isRound2?[seededBankRound2,seededBankRound1]:[seededBankRound1,seededBankRound2];
+      const baseBank=Object.fromEntries([...new Set(bankOrder.flatMap(b=>Object.keys(b)))].map(cat=>[cat,[...new Map(bankOrder.flatMap(b=>b[cat]||[]).map(q=>[q[0],q])).values()]]));
       const eligible = Object.keys(baseBank).filter(cat => Array.isArray(baseBank[cat]) && baseBank[cat].length >= cfg.qPerCat);
       if (eligible.length < cfg.categoryCount) throw new Error(`Only ${eligible.length} MDE categories have ${cfg.qPerCat} questions; reduce categories or questions per category.`);
       const cats = randomizeBoardSel.value === "on" ? shuffle([...eligible]).slice(0,cfg.categoryCount) : eligible.slice(0,cfg.categoryCount);
@@ -603,7 +611,7 @@
 
       for (const cat of cats){
         const pool = baseBank[cat];
-        const picks = randomizeBoardSel.value === "on" ? shuffle([...pool]).slice(0, cfg.qPerCat) : pool.slice(0, cfg.qPerCat);
+        const picks = rotatingQuestions(cat,pool,cfg.qPerCat);
         for (let i=0;i<cfg.qPerCat;i++){
           const row = rows[i];
           const [text, answers] = picks[i];
@@ -714,7 +722,7 @@
       state.activeKey = null;
       state.ddLockedWager = null;
       state.final = { step:"off", idx:0, wagers:new Map(), answers:new Map(), timerId:null, timerRemaining:0 };
-      finalJeopardy = finalJeopardyBank[Math.floor(Math.random()*finalJeopardyBank.length)];
+      finalJeopardy = rotatingQuestions('__final__',finalJeopardyBank,1)[0];
 
 
       state.players.forEach(p=>p.score=0);
@@ -924,6 +932,8 @@
     }
     function handleSubmit(){
       if (!state.activeKey || ![P.ANSWER,P.STEAL_ANSWER].includes(phase)) return;
+      if(state.timer.paused){feedback.textContent="Resume the timer before submitting.";return;}
+      if(!answerInput.value.trim()){feedback.textContent="Type a short answer, then press Enter or Submit.";answerInput.focus();return;}
       rememberRuling();
       stopQuestionBeat();
       const [cat,rowStr] = state.activeKey.split("::");
@@ -1525,7 +1535,7 @@
       'results':['Mission results','Final scores, champions and training review.']
     };
     function renderPhasePage(screen){
-      const changed=document.body.dataset.screen!==screen;document.body.dataset.screen=screen;
+      const changed=document.body.dataset.screen!==screen;document.body.dataset.screen=screen;if(changed){document.body.classList.remove('show-rankings');$('toggleRankings').textContent='Show rankings';}
       const [title,description]=phasePages[screen]||phasePages.lobby;
       $('phasePageTitle').textContent=title;$('phasePageDescription').textContent=description;
       document.title=title+' | VA MDE Triage Jeopardy';
@@ -1539,7 +1549,7 @@
     function scorePayload(){return MissionCore.ranks(state.players).map(({player:p,index,rank})=>({id:playerId(index),name:p.name,score:p.score,rank,connected:Date.now()-(presence.get(p.id)||0)<15000,ready:!!state.ready.get(index)}));}
     function publicSnapshot(targetId=null){const p=state.players[state.controlIdx];return {type:'snapshot',targetId,gameId,revision:++revision,phase,questionId,serverNow:Date.now(),controller:p?.name||'',controllerId:p?playerId(state.controlIdx):null,attempted:[...attempted],deadline,paused:state.final.step==='answers'?!!state.final.paused:!!state.timer.paused,remaining:state.final.step==='answers'?state.final.timerRemaining:state.timer.remaining,gameDeadline,finalDeadline,scores:scorePayload(),board:mobileBoardState(),question:state.activeKey?{category:clueCatEl.textContent,value:clueValueEl.textContent,text:questionText.textContent}:null,final:{category:finalJeopardy?.category,clue:['answers','reveal','complete'].includes(state.final.step)?finalJeopardy?.text:'',wagered:[...state.final.wagers.keys()].map(i=>playerId(i)),answered:[...state.final.answers.keys()].map(i=>playerId(i))},debrief:phase===P.DEBRIEF?reviewHistory.at(-1):null,guile:$('guileMessage').textContent};}
     function sendSnapshot(targetId=null){if(!engineReady)return;broadcastToBuzzers(publicSnapshot(targetId));}
-    function updateMissionHUD(){if(!$('missionPhase'))return;$('missionPhase').textContent=phase.replace(/-/g,' ').toUpperCase();$('missionController').textContent=state.players[state.controlIdx]?.name||'—';$('missionConnection').textContent=realtimeEnabled?(realtimeReady?'ONLINE RELAY READY':'RECONNECTING'):'LOCAL DEVICES ONLY';$('missionClock').textContent=state.final.step==='answers'?`${state.final.timerRemaining}s`:state.timer.id?`${state.timer.remaining}s${state.timer.paused?' PAUSED':''}`:formatClock(state.gameClock.remaining);$('lockMissingWagers').disabled=phase!==P.FINAL_WAGER;$('undoRuling').disabled=undoHistory.length===0;}
+    function updateMissionHUD(){if(!$('missionPhase'))return;$('missionPhase').textContent=phase.replace(/-/g,' ').toUpperCase();$('missionController').textContent=state.players[state.controlIdx]?.name||'—';$('missionConnection').textContent=realtimeEnabled?(realtimeReady?'ONLINE RELAY READY':'RECONNECTING'):'LOCAL DEVICES ONLY';$('missionClock').textContent=state.final.step==='answers'?`${state.final.timerRemaining}s`:state.timer.id?`${state.timer.remaining}s${state.timer.paused?' PAUSED':''}`:formatClock(state.gameClock.remaining);$('lockMissingWagers').disabled=phase!==P.FINAL_WAGER;$('undoRuling').disabled=undoHistory.length===0;$('answerTimeProgress').max=state.timer.mode.startsWith('steal')?Number(stealSecondsInput.value):Number(qSecondsInput.value);$('answerTimeProgress').value=state.timer.remaining;}
     function bindClient(data){const client=String(data.clientId||'');if(!client||client.length>100)return null;const existing=playerSessions.get(client);if(existing)return state.players.find(p=>p.id===existing)||null;if(data.type!=='join')return null;let p=state.players.find(p=>sameName(p.name,data.player));if(p&&[...playerSessions.values()].includes(p.id)){broadcastToBuzzers({type:'join-ack',targetId:client,player:data.player,registered:false,reason:'That name is already connected. Choose another name.'});return null;}if(!p){if(![P.LOBBY,P.BRIEFING].includes(phase))return null;const registration=registerBuzzerPlayer(String(data.player||'').slice(0,40));if(!registration.ok)return null;p=state.players[registration.index];}if(!p.id)p.id=MissionCore.id();playerSessions.set(client,p.id);checkpoint();return p;}
     function receivePlayer(data){if(!data||data.room!==roomCode||typeof data.type!=='string'||JSON.stringify(data).length>10000)return;
       const now=Date.now(),rate=messageRates.get(data.clientId)||{at:now,count:0};if(now-rate.at>1000){rate.at=now;rate.count=0;}if(++rate.count>30)return;messageRates.set(data.clientId,rate);
@@ -1574,7 +1584,7 @@
       }
       gameDeadline=0;state.gameClock.paused=true;$('pauseMission').textContent='Resume mission';$('recoveryPanel').hidden=true;document.body.classList.toggle('mission-playing',![P.LOBBY,P.BRIEFING].includes(phase));guileBrief('Mission recovered. Resume the mission and active question when everyone is ready.');renderPhasePage(phase);checkpoint();sendSnapshot();}
     function renderTrainingReview(){const counts=new Map();for(const r of reviewHistory)if(!r.correct)counts.set(r.category,(counts.get(r.category)||0)+1);const html=`<h3>Training debrief</h3><p>${reviewHistory.filter(r=>r.correct).length}/${reviewHistory.length} objectives answered correctly.</p><p>Review topics: ${[...counts].map(([c,n])=>`${escapeHtml(c)} (${n})`).join(', ')||'No missed topics recorded.'}</p><details><summary>Review every completed objective</summary>${reviewHistory.map(r=>`<article class="review-item"><strong>${escapeHtml(r.category)}</strong><p>${escapeHtml(r.question)}</p><p>${escapeHtml(r.explanation)}</p></article>`).join('')}</details>`;$('trainingReview').innerHTML=html;}
-    function initializeMission(){engineReady=true;renderPhasePage(location.hash==='#lobby'?'lobby':'landing');$('enterLobby').onclick=()=>setPhase(P.LOBBY);let saved=null;try{saved=JSON.parse(localStorage.getItem('mission-save-'+roomCode));}catch{}if(saved&&saved.players?.length){$('recoveryPanel').hidden=false;$('restoreCheckpoint').onclick=()=>restoreMission(saved);}
+    function initializeMission(){engineReady=true;renderPhasePage(location.hash==='#lobby'?'lobby':'landing');$('enterLobby').onclick=()=>setPhase(P.LOBBY);$('toggleRankings').onclick=()=>{const shown=document.body.classList.toggle('show-rankings');$('toggleRankings').textContent=shown?'Hide rankings':'Show rankings';};let saved=null;try{saved=JSON.parse(localStorage.getItem('mission-save-'+roomCode));}catch{}if(saved&&saved.players?.length){$('recoveryPanel').hidden=false;$('restoreCheckpoint').onclick=()=>restoreMission(saved);}
       $('pauseMission').onclick=()=>{state.gameClock.paused=!state.gameClock.paused;if(!state.gameClock.paused){if(!state.gameClock.id&&state.final.step==='off')startGameClock(state.gameClock.remaining);else gameDeadline=Date.now()+state.gameClock.remaining*1000;}$('pauseMission').textContent=state.gameClock.paused?'Resume mission':'Pause mission';checkpoint();sendSnapshot();};
       $('acceptAnswer').onclick=()=>{if(!state.activeKey||![P.ANSWER,P.STEAL_ANSWER].includes(phase))return;const [c,r]=state.activeKey.split('::');answerInput.value=state.board.clueFor(c,Number(r)).answers[0];logAction('accept-equivalent',state.players[state.controlIdx].name);handleSubmit();};
       $('undoRuling').onclick=undoRuling;$('applyScore').onclick=()=>{const i=Number($('scorePlayer').value),score=Number($('scoreCorrection').value);if(!state.players[i]||!Number.isSafeInteger(score))return;rememberRuling();logAction('score-correction',{player:state.players[i].name,from:state.players[i].score,to:score});state.players[i].score=score;renderScoreboard();checkpoint();sendSnapshot();};

@@ -272,6 +272,7 @@
       buzzerBtn.disabled = true;
     });
 
+    let submittedQuestion=null;
     function submitRemoteAnswer(){
       const answer=(remoteAnswerInput.value||"").trim();
       if(!playerName || !answer || submitAnswerBtn.disabled){
@@ -279,13 +280,13 @@
         statusMsg.className="err";
         return;
       }
-      submitAnswerBtn.disabled=true;
+      submittedQuestion=currentQuestion;submitAnswerBtn.disabled=true;remoteAnswerInput.disabled=true;
       sendToHost({type:"answer",player:playerName,answer});
       statusMsg.textContent="Sending answer to host…";
       statusMsg.className="";
     }
     submitAnswerBtn.addEventListener("click",submitRemoteAnswer);
-    remoteAnswerInput.addEventListener("keydown",e=>{if(e.key==="Enter") submitRemoteAnswer();});
+    remoteAnswerInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing) submitRemoteAnswer();});
 
 
     finalWagerBtn.addEventListener("click",()=>{
@@ -319,17 +320,19 @@
       // Snapshot owns gameplay display; acknowledgments provide immediate feedback only.
       if(['question-start','question-end','board-state','final-answer','final-wager'].includes(data.type))return;
       handleHostMessage(data);
+      if(data.type==='answer-denied'){submittedQuestion=null;remoteAnswerInput.disabled=false;submitAnswerBtn.disabled=false;}
       if(data.type==='final-error'){finalWagerBtn.disabled=false;finalAnswerBtn.disabled=false;}
       if(data.type==='join-ack'&&!data.registered){loginSection.style.display='block';buzzerSection.style.display='none';loginError.textContent=data.reason||'Name already in use.';playerName=null;}
     }
-    function applySnapshot(data){if(!playerName)return;if(data.gameId!==currentGame){lastRevision=-1;currentGame=data.gameId;currentQuestion=data.questionId;}
+    function applySnapshot(data){if(!playerName)return;const previousQuestion=currentQuestion,previousPhase=lastSnapshot?.phase;if(data.gameId!==currentGame){lastRevision=-1;currentGame=data.gameId;currentQuestion=data.questionId;}
       if(data.revision<=lastRevision)return;lastRevision=data.revision;lastSnapshot=data;lastSnapshotAt=Date.now();currentQuestion=data.questionId;
       if(!registeredId){const p=(data.scores||[]).find(p=>sameName(p.name,playerName));if(p)registeredId=p.id;}
+      if(previousQuestion!==data.questionId||(previousPhase==='debrief'&&['answering','steal-answering'].includes(data.phase))){submittedQuestion=null;remoteAnswerInput.value='';}document.body.dataset.playerPhase=data.phase;
       $('phonePhase').textContent=data.phase.replace(/-/g,' ').toUpperCase();$('phoneConnection').textContent='CONNECTED';$('phoneLatency').textContent=lastLatency+'ms relay';$('phoneGuileMessage').textContent=data.guile||'';
       $('phoneScores').innerHTML=(data.scores||[]).map(p=>`<div class="phone-rank"><strong>${p.rank}</strong><span>${escapeMobile(p.name)}</span><b>$${Number(p.score).toLocaleString()}</b></div>`).join('');
       const P=MissionCore.PHASES,controller=data.controllerId===registeredId,canAnswer=MissionCore.canAnswer(data.phase,data.controllerId,registeredId,data.paused),canBuzz=MissionCore.canBuzz(data.phase,data.attempted||[],registeredId,data.paused);
       $('phoneReady').style.display=[P.LOBBY,P.BRIEFING].includes(data.phase)?'block':'none';$('phoneReady').textContent=data.scores.find(p=>p.id===registeredId)?.ready?'Ready ✓ — tap to cancel':'Mark ready';
-      controlBanner.textContent='In command: '+(data.controller||'—');buzzerBtn.disabled=!canBuzz;buzzerBtn.textContent=canBuzz?'BUZZ TO STEAL':data.paused?'PAUSED':'STAND BY';answerArea.style.display=canAnswer?'block':'none';submitAnswerBtn.disabled=!canAnswer;$('phonePass').disabled=!canAnswer;
+      controlBanner.textContent='In command: '+(data.controller||'—');buzzerBtn.disabled=!canBuzz;buzzerBtn.textContent=canBuzz?'BUZZ TO STEAL':data.paused?'PAUSED':'STAND BY';answerArea.style.display=canAnswer?'block':'none';submitAnswerBtn.disabled=!canAnswer||submittedQuestion===currentQuestion;remoteAnswerInput.disabled=!canAnswer||submittedQuestion===currentQuestion;if(canAnswer&&submittedQuestion!==currentQuestion&&previousQuestion!==data.questionId)remoteAnswerInput.focus({preventScroll:true});$('phonePass').disabled=!canAnswer;
       if(data.question)questionInfo.textContent=data.question.category+' • '+data.question.value+' — '+data.question.text;else questionInfo.textContent='Waiting for the next objective';
       if(data.board)renderMobileBoard(data.board);mobileBoard.style.display=data.phase===P.BOARD?'block':'none';
       finalMobile.style.display=[P.FINAL_WAGER,P.FINAL_ANSWER,P.FINAL_REVEAL,P.RESULTS].includes(data.phase)?'block':'none';

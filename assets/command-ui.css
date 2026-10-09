@@ -68,3 +68,18 @@ body[data-screen=debrief] #correctAnswerOverlay{background:#101e16;backdrop-filt
 
 body:has(#guileHost)[data-screen=lobby],body:has(#guileHost)[data-screen=briefing]{background:linear-gradient(#0b120ee0,#101a13f5),url('army-multicam.svg') center/600px fixed}
 body:has(#guileHost) #lobbyHero{background-image:linear-gradient(90deg,#111c14f7,#192c20d9,#16261cb0),url('army-multicam.svg')!important;background-size:cover!important}
+
+/* Focused answer stage and larger controller targets. */
+body[data-screen=answering]:not(.show-rankings) #scoreBoard,body[data-screen=steal-open]:not(.show-rankings) #scoreBoard,body[data-screen=steal-answering]:not(.show-rankings) #scoreBoard,body[data-screen=daily-double-wager]:not(.show-rankings) #scoreBoard{display:none!important}
+body[data-screen=selection] #toggleRankings,body[data-screen=lobby] #toggleRankings,body[data-screen=briefing] #toggleRankings,body[data-screen^=final-] #toggleRankings,body[data-screen=results] #toggleRankings{display:none}
+#qaPane{max-width:1100px;margin:20px auto;background:linear-gradient(145deg,#15271ff5,#0d1c16fc);border:1px solid #899678;box-shadow:0 24px 65px #0005}
+#questionText{padding:30px 12px;text-align:center;min-height:180px;display:flex;align-items:center;justify-content:center}
+#answerTimeProgress{display:block;width:100%;height:7px;margin:8px 0 26px;accent-color:#e6c481}
+#answerInput{min-height:58px;font-size:18px;border:2px solid #75876b}#submitBtn,#passBtn{min-height:58px;font-size:17px}
+#feedback{font-size:17px;font-weight:700;min-height:30px;margin-top:16px}
+.phone-command #remoteAnswerInput{width:100%;min-height:58px;font-size:18px;border:2px solid #91ac7b;scroll-margin-bottom:180px}
+.phone-command #submitAnswerBtn,.phone-command #phonePass{min-height:56px;font-size:18px;margin-top:12px}
+.phone-command #questionInfo{text-align:left;font-size:18px;line-height:1.6;padding:18px;background:#102219;border-radius:12px}
+.phone-command #buzzerBtn{min-height:96px;font-size:24px;box-shadow:0 12px 25px #0005}
+.phone-command body[data-player-phase=answering] #buzzerBtn,.phone-command body[data-player-phase=steal-answering] #buzzerBtn{display:none}
+@media(max-width:700px){#qaPane{padding:20px}#questionText{font-size:24px;padding:20px 0;min-height:150px}#answerInput,#submitBtn,#passBtn{width:100%}#qaPane .row:has(#answerInput){display:flex;flex-direction:column;align-items:stretch}#toggleRankings{font-size:11px;padding:8px 12px}}

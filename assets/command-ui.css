@@ -28,3 +28,11 @@ body:has(#guileHost){padding-bottom:210px}
 #guileHost[data-reaction=correct]>div{border-color:#a2c887}
 #guileHost[data-reaction=steal]>div{border-color:#e8b354}
 @media(max-width:700px){body:has(#guileHost){padding-bottom:180px}#guileHost{right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:min(340px,calc(100vw - 24px));gap:12px}#guileHost img,.mission-playing #guileHost img{width:66px;height:118px;flex-basis:66px}#guileHost>div{margin-bottom:22px;padding:12px 14px}#guileHost p{font-size:12px;max-height:150px}#guileHost strong{font-size:8px}}
+
+/* Landing scene: one full-width backdrop, with the title over the open sky. */
+body:has(#guileHost) .hero{min-height:700px;padding:50px 54% 40px 36px;background:linear-gradient(90deg,#081710a8 0%,#0a19144d 40%,transparent 65%),url('futuristic-military-base.webp') center/cover;justify-content:flex-start}
+body:has(#guileHost) .hero-art{display:none}
+body:has(#guileHost) .hero h1{font-size:clamp(38px,4.4vw,64px);text-shadow:0 3px 20px #000}
+body:has(#guileHost) .hero p{background:#07130cc9;border-radius:8px;padding:10px 12px;font-size:13px}
+body:has(#guileHost) .mission-metrics{background:#07130cc9;border-radius:8px;padding:12px 14px}
+@media(max-width:700px){body:has(#guileHost) .hero{min-height:0;padding:calc((100vw - 26px)*.5625 + 24px) 20px 46px;background:linear-gradient(180deg,transparent 0%,#0a191400 20%,#0a1914 45%),url('futuristic-military-base.webp') center top/100% auto no-repeat;background-color:#0a1914}body:has(#guileHost) .hero::before{display:none}body:has(#guileHost) .hero h1{font-size:36px}body:has(#guileHost) .hero p{background:none;padding:0}body:has(#guileHost) .mission-metrics{padding:12px 0;background:none}}

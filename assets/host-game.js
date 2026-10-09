@@ -245,20 +245,28 @@
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
     const stageSounds = Object.fromEntries(Object.entries({'final-wager':'isac_enter_dark_zone.mp3',results:'trumpet.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
-    // Decode once and loop the complete buffer without network reloads or timer gaps.
-    function softenLoopBoundary(buffer){
-      const frames=Math.min(Math.round(buffer.sampleRate*.08),Math.floor(buffer.length/2));
+    // Build one circular buffer: overlap the tail with the head, then loop in hardware.
+    // Every part of the uploaded clip is retained, with 220 ms shared at the seam.
+    function buildSeamlessLoop(buffer){
+      const overlap=Math.min(Math.round(buffer.sampleRate*.22),Math.floor(buffer.length/4));
+      if(overlap<2)return buffer;
+      const result=audio.ctx.createBuffer(buffer.numberOfChannels,buffer.length-overlap,buffer.sampleRate);
       for(let channel=0;channel<buffer.numberOfChannels;channel++){
-        const samples=buffer.getChannelData(channel);
-        for(let i=0;i<frames;i++){const fade=Math.sin((i/(frames-1))*Math.PI/2);samples[i]*=fade;samples[buffer.length-1-i]*=fade;}
+        const input=buffer.getChannelData(channel),output=result.getChannelData(channel);
+        output.set(input.subarray(overlap));
+        const boundary=output.length-overlap;
+        for(let i=0;i<overlap;i++){
+          const mix=.5-.5*Math.cos(Math.PI*i/(overlap-1));
+          output[boundary+i]=input[buffer.length-overlap+i]*(1-mix)+input[i]*mix;
+        }
       }
-      return buffer;
+      return result;
     }
     function createLoopingBed(url){
       let bufferPromise=null,buffer=null,source=null,gain=null,offset=0,startedAt=0,token=0,volume=.25,paused=true;
       return {get paused(){return paused;},get currentTime(){return source?(offset+audio.ctx.currentTime-startedAt)%buffer.duration:offset;},set currentTime(value){offset=Math.max(0,Number(value)||0);},get volume(){return volume;},set volume(value){volume=value;if(gain)gain.gain.setTargetAtTime(volume,audio.ctx.currentTime,.025);},
         async play(){if(!paused)return;audioInit();if(!audio.ctx)throw Error('Audio unavailable');paused=false;const request=++token;
-          try{await audio.ctx.resume();if(!bufferPromise)bufferPromise=fetch(url).then(r=>{if(!r.ok)throw Error('Audio load failed');return r.arrayBuffer();}).then(b=>audio.ctx.decodeAudioData(b)).then(softenLoopBoundary).catch(e=>{bufferPromise=null;throw e;});
+          try{await audio.ctx.resume();if(!bufferPromise)bufferPromise=fetch(url).then(r=>{if(!r.ok)throw Error('Audio load failed');return r.arrayBuffer();}).then(b=>audio.ctx.decodeAudioData(b)).then(buildSeamlessLoop).catch(e=>{bufferPromise=null;throw e;});
             buffer=await bufferPromise;if(request!==token||paused)return;
             if(!gain){gain=audio.ctx.createGain();gain.connect(audio.ctx.destination);}gain.gain.value=volume;
             source=audio.ctx.createBufferSource();source.buffer=buffer;source.loop=true;source.connect(gain);startedAt=audio.ctx.currentTime;source.start(0,offset%buffer.duration);

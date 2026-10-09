@@ -318,7 +318,7 @@
       if(data.revision<=lastRevision)return;lastRevision=data.revision;lastSnapshot=data;if(data.audio?.muted)Object.values(phoneAudio).forEach(s=>s.pause());lastSnapshotAt=Date.now();currentQuestion=data.questionId;
       if(!registeredId){const p=(data.scores||[]).find(p=>sameName(p.name,playerName));if(p)registeredId=p.id;}
       if(previousQuestion!==data.questionId||(previousPhase==='debrief'&&['answering','steal-answering'].includes(data.phase))){submittedQuestion=null;remoteAnswerInput.value='';}document.body.dataset.playerPhase=data.phase;
-      $('phonePhase').textContent=data.phase.replace(/-/g,' ').toUpperCase();$('phoneConnection').textContent='CONNECTED';$('phoneLatency').textContent=lastLatency+'ms relay';$('phoneGuileMessage').textContent=data.guile||'';
+      $('phonePhase').textContent=data.launchRemaining?'LAUNCH IN '+data.launchRemaining:data.phase.replace(/-/g,' ').toUpperCase();$('phoneConnection').textContent='CONNECTED';$('phoneLatency').textContent=lastLatency+'ms relay';$('phoneGuileMessage').textContent=data.guile||'';
       $('phoneScores').innerHTML=(data.scores||[]).map(p=>`<div class="phone-rank"><strong>${p.rank}</strong><span>${escapeMobile(p.name)}</span><b>$${Number(p.score).toLocaleString()}</b></div>`).join('');
       const P=MissionCore.PHASES,controller=data.controllerId===registeredId,canAnswer=MissionCore.canAnswer(data.phase,data.controllerId,registeredId,data.paused),canBuzz=MissionCore.canBuzz(data.phase,data.attempted||[],registeredId,data.paused);
       $('phoneReady').style.display=[P.LOBBY,P.BRIEFING].includes(data.phase)?'block':'none';$('phoneReady').textContent=data.scores.find(p=>p.id===registeredId)?.ready?'Ready ✓ — tap to cancel':'Mark ready';

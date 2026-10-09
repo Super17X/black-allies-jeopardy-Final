@@ -100,3 +100,5 @@ body[data-screen=lobby] .mission-hud{position:static}
 body[data-screen=results] .mission-winners{animation:mission-enter .45s ease-out both}
 @media(prefers-reduced-motion:reduce){.phase-enter *,#guileHost>div{animation:none!important;transition:none!important}}
 .reduce-motion .phase-enter,.reduce-motion #guileHost>div{animation:none!important;transition:none!important}
+
+#launchCountdown{margin:20px auto;text-align:center;font:900 clamp(64px,12vw,120px)/1 system-ui;color:#f0ce87;text-shadow:0 0 35px #e9c37055}#launchCountdown[hidden]{display:none}

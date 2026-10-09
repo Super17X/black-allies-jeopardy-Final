@@ -21,3 +21,5 @@ Source: user-filled Game-Sound-Schedule(1).xlsx. Blank assignments preserve exis
 | S70 | Winner announcement | trumpet.mp3 | Host once; selected in follow-up |
 
 Existing heartbeat urgency, wrong-answer cue and Final hip-hop music remain. Additional uploaded clips include helicopter_military(1).mp3 and platoon_attention(1).mp3; canonical filenames above are used in game code.
+
+Lobby entrance: awaiting_orders.mp3. Briefing entrance: platoon_attention.mp3. Join cues fire for new phone and host-added players, with silent reconnects. Mission launch shows 5,4,3,2,1 with host countdown tones and mirrored phone status. Readiness loss cancels the countdown; Back cancels it too.

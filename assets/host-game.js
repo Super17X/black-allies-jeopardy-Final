@@ -682,6 +682,7 @@
       clearTimeout(guileReactionTimer); host.dataset.reaction="idle";
       void host.offsetWidth; host.dataset.reaction=reaction;
       $("guileMessage").textContent=message;
+      if(reaction==="wrong"){const portrait=host.querySelector("img");portrait.classList.remove("guile-wrong");void portrait.offsetWidth;portrait.classList.add("guile-wrong");setTimeout(()=>portrait.classList.remove("guile-wrong"),600);}
       guileReactionTimer=setTimeout(()=>{host.dataset.reaction="idle";},1800);
     }
     function renderScoreboard(){

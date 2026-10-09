@@ -9,6 +9,14 @@
 #correctAnswerOverlay.show{animation:none;background:rgba(0,0,0,.88)}#correctAnswerBox{max-height:88vh;overflow:auto;min-height:0;padding:28px;background:#132219;animation:none;transform:none;border-width:2px}#correctAnswerText{font-size:clamp(22px,3vw,40px);line-height:1.3}#correctAnswerTitle{font-size:18px;margin-bottom:16px}#finishDebrief{margin-top:20px}#correctAnswerCountdown{font-size:14px} .guile-host img.guile-wrong{animation:guile-shake .55s}
 
 /* Guile speaks from the lower-right corner; reserve room below the game. */
+.base-panorama{position:relative;margin:22px 0;border:1px solid #65705a;border-radius:18px;overflow:hidden;background:#111d19;box-shadow:0 16px 50px #0006}
+.base-panorama img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.base-panorama figcaption{position:absolute;inset:auto 0 0;padding:30px 26px 20px;background:linear-gradient(transparent,#091411ee);color:#e9d7a8;font:700 11px ui-monospace,monospace;letter-spacing:.2em}
+.base-panorama figcaption span{display:block;margin-top:8px;color:#cfdfd9;font:12px system-ui;letter-spacing:.04em}
+body:has(#guileHost){background:linear-gradient(180deg,#08120d70,#08140db8),url('futuristic-military-base.webp') center/cover fixed}
+body:has(#guileHost) .hero{background:linear-gradient(90deg,#0a1715f7 5%,#11251bc9 55%,#10241b55),url('futuristic-military-base.webp') center/cover;border-color:#7e8264}
+.mission-playing .base-panorama{display:none}
+@media(max-width:700px){.base-panorama{border-radius:12px}.base-panorama figcaption{padding:25px 14px 12px;font-size:8px}.base-panorama figcaption span{font-size:10px}body:has(#guileHost){background-attachment:scroll;background-size:auto 100vh}}
 body:has(#guileHost){padding-bottom:210px}
 #guileHost{position:fixed;right:max(24px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:100;display:flex;align-items:flex-end;gap:18px;width:min(440px,calc(100vw - 36px));margin:0;padding:0;border:0;background:none;border-radius:0;box-shadow:none;pointer-events:none}
 .mission-playing #guileHost{margin:0;box-shadow:none}

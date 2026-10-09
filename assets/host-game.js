@@ -245,21 +245,33 @@
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
     const stageSounds = Object.fromEntries(Object.entries({'final-wager':'isac_enter_dark_zone.mp3',results:'trumpet.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
-    // Build one circular buffer: overlap the tail with the head, then loop in hardware.
-    // Every part of the uploaded clip is retained, with 220 ms shared at the seam.
+    // Match the overlap to the recording, then preserve loudness through the blend.
     function buildSeamlessLoop(buffer){
-      const overlap=Math.min(Math.round(buffer.sampleRate*.22),Math.floor(buffer.length/4));
+      let overlap=0,bestCorrelation=-Infinity;
+      for(let seconds=.12;seconds<=.4;seconds+=.005){
+        const frames=Math.round(buffer.sampleRate*seconds);if(frames*4>buffer.length)break;
+        let dot=0,tailPower=0,headPower=0;
+        for(let c=0;c<buffer.numberOfChannels;c++){
+          const samples=buffer.getChannelData(c);
+          for(let i=0;i<frames;i+=4){const tail=samples[buffer.length-frames+i],head=samples[i];dot+=tail*head;tailPower+=tail*tail;headPower+=head*head;}
+        }
+        const correlation=dot/Math.sqrt(Math.max(1e-12,tailPower*headPower));
+        if(correlation>bestCorrelation){bestCorrelation=correlation;overlap=frames;}
+      }
       if(overlap<2)return buffer;
       const result=audio.ctx.createBuffer(buffer.numberOfChannels,buffer.length-overlap,buffer.sampleRate);
+      const correlation=Math.max(0,Math.min(1,bestCorrelation));let peak=0;
       for(let channel=0;channel<buffer.numberOfChannels;channel++){
         const input=buffer.getChannelData(channel),output=result.getChannelData(channel);
-        output.set(input.subarray(overlap));
-        const boundary=output.length-overlap;
+        output.set(input.subarray(overlap));const boundary=output.length-overlap;
         for(let i=0;i<overlap;i++){
-          const mix=.5-.5*Math.cos(Math.PI*i/(overlap-1));
-          output[boundary+i]=input[buffer.length-overlap+i]*(1-mix)+input[i]*mix;
+          const mix=.5-.5*Math.cos(Math.PI*i/(overlap-1)),tail=1-mix;
+          const energy=Math.sqrt(tail*tail+mix*mix+2*correlation*tail*mix);
+          output[boundary+i]=(input[buffer.length-overlap+i]*tail+input[i]*mix)/energy;
         }
+        for(const sample of output)peak=Math.max(peak,Math.abs(sample));
       }
+      if(peak>.98)for(let c=0;c<result.numberOfChannels;c++){const samples=result.getChannelData(c);for(let i=0;i<samples.length;i++)samples[i]*=.98/peak;}
       return result;
     }
     function createLoopingBed(url){

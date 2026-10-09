@@ -4,7 +4,7 @@ Source: user-filled Game-Sound-Schedule(1).xlsx. Blank assignments preserve exis
 
 | ID | Event | Clip | Playback |
 |---|---|---|---|
-| S01 | Landing / lobby music | hard_work.mp3 | Host full 18.16-second clip loops from a decoded audio buffer with a 220 ms tail/head overlap on landing, lobby and briefing; stops at game launch; mute pauses and unmute resumes |
+| S01 | Landing / lobby music | hard_work.mp3 | Host full 18.16-second clip loops from a decoded audio buffer with an automatically matched 120–400 ms overlap, compensated blend volume, and peak protection on landing, lobby and briefing; stops at game launch; mute pauses and unmute resumes |
 | S04 | New player joins | awaiting_orders.mp3 | Host once; reconnect is silent |
 | S05 | Player becomes ready | orders_received.mp3 | Host once; repeated ready messages are silent |
 | S06 | All players become ready | platoon_attention.mp3 | Host once, replaces individual ready cue |

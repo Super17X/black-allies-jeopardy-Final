@@ -236,14 +236,20 @@
     questionBeat.preload = "auto";
     questionBeat.loop = false;
     // Uploaded result sound effects
-    const moneySound = new Audio("assets/money_sound_effect.mp3");
-    const stealSound = new Audio("assets/sound_effect_1.mp3");
-    const rizzSound = new Audio("assets/rizz.mp3");
-    const boomSound = new Audio("assets/boom_sound_effect.mp3");
+    const moneySound = new Audio("assets/roger.mp3");
+    const stealSound = new Audio("assets/no_sir.mp3");
+    const rizzSound = new Audio("assets/no_sir.mp3");
+    const boomSound = new Audio("assets/brrrrt.mp3");
     const buzzSound = new Audio("assets/metal_gear_solid.mp3");
-    const joinSound = new Audio("assets/mario_coin.mp3");
+    const joinSound = new Audio("assets/m1_garand_notification.mp3");
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
+    const stageSounds = Object.fromEntries(Object.entries({lobby:'awaiting_orders.mp3',briefing:'platoon_attention.mp3',selection:'orders_received.mp3','final-wager':'military_top_secret.mp3',results:'hooah.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
+    const pressureSound=new Audio('assets/beating_hearts.mp3');pressureSound.preload='none';pressureSound.loop=true;
+    function stopPressure(){pressureSound.pause();pressureSound.currentTime=0;syncQuestionBeatVolume();}
+    function startPressure(){if(soundModeSel.value==='off')return;pressureSound.volume=audio.volume;questionBeat.volume=audio.volume*.25;pressureSound.play().catch(()=>{});}
+    function stopStageSounds(){Object.values(stageSounds).forEach(s=>{s.pause();s.currentTime=0;});}
+    function playStageSound(screen){stopStageSounds();const sound=stageSounds[screen];if(sound&&soundModeSel.value!=='off'){sound.volume=audio.volume;sound.play().catch(()=>{});}}
     let resultSoundEndTimer;
     function playResultSound(sound){
       questionBeat.volume=0.06;finalBeat.volume=0.06;clearTimeout(resultSoundEndTimer);
@@ -309,10 +315,11 @@
       audio.mode = soundModeSel.value;
       audio.volume = Math.max(0, Math.min(1, Number(volumeInput.value || 0.25)));
       if (audio.master) audio.master.gain.value = audio.volume;
+      pressureSound.volume=audio.volume;Object.values(stageSounds).forEach(s=>s.volume=audio.volume);
     }
     soundModeSel.addEventListener("change", setAudioFromUI);
     volumeInput.addEventListener("change", ()=>{ setAudioFromUI(); syncQuestionBeatVolume(); finalBeat.volume = Math.max(0, Math.min(1, Number(volumeInput.value || 0.25))); });
-    soundModeSel.addEventListener("change", ()=>{ if (soundModeSel.value === "off") { pauseQuestionBeat(); stopFinalBeat();stopMusic();[moneySound,stealSound,rizzSound,boomSound,buzzSound,joinSound].forEach(s=>s.pause()); } });
+    soundModeSel.addEventListener("change", ()=>{ if (soundModeSel.value === "off") { pauseQuestionBeat(); stopPressure();stopStageSounds();stopFinalBeat();stopMusic();[moneySound,stealSound,rizzSound,boomSound,buzzSound,joinSound].forEach(s=>s.pause()); } });
 
 
     function now(){ return audio.ctx?.currentTime ?? 0; }
@@ -888,10 +895,11 @@
       setPhase(mode==='dd-wager'?P.WAGER:mode==='steal'?P.STEAL:mode==='steal-answer'?P.STEAL_ANSWER:P.ANSWER);
       const canInput=phase!==P.STEAL&&phase!==P.WAGER;answerInput.disabled=!canInput;submitBtn.disabled=!canInput;passBtn.disabled=!canInput;
       timerEl.textContent=state.timer.remaining+'s';
-      state.timer.id=setInterval(()=>{if(state.timer.paused)return;state.timer.remaining=MissionCore.remaining(deadline);timerEl.textContent=state.timer.remaining+'s';timerEl.classList.toggle('timer-critical',state.timer.remaining<=10);if(state.timer.remaining<=10&&!state.timer.warned){state.timer.warned=true;guileBrief('Ten seconds. Stay focused.');}if(state.timer.remaining>0)return;const expiredMode=state.timer.mode;stopTimer();if(typeof onExpire==='function')return onExpire();if(expiredMode==='dd-wager'){markUsed();closeClue();return;}const [cat,row]=state.activeKey.split('::');const clue=state.board.clueFor(cat,Number(row));sfxTimesUp();if(expiredMode==='steal'){showDebrief(clue,false);return;}continueAfterMiss(clue,'Time expired.');},250);
+      state.timer.id=setInterval(()=>{if(state.timer.paused)return;state.timer.remaining=MissionCore.remaining(deadline);timerEl.textContent=state.timer.remaining+'s';timerEl.classList.toggle('timer-critical',state.timer.remaining<=10);if(state.timer.remaining<=10&&!state.timer.warned){state.timer.warned=true;startPressure();guileBrief('Ten seconds. Stay focused.');}if(state.timer.remaining>0)return;const expiredMode=state.timer.mode;stopTimer();if(typeof onExpire==='function')return onExpire();if(expiredMode==='dd-wager'){markUsed();closeClue();return;}const [cat,row]=state.activeKey.split('::');const clue=state.board.clueFor(cat,Number(row));sfxTimesUp();if(expiredMode==='steal'){showDebrief(clue,false);return;}continueAfterMiss(clue,'Time expired.');},250);
       state.timer.warned=false;updateQuestionPauseButton();sendSnapshot();
     }
     function stopTimer(){
+      stopPressure();
       deadline=0;buzzerActive=false;firstBuzzer=null;
       if (state.timer.id) clearInterval(state.timer.id);
       state.timer.id=null;
@@ -913,7 +921,7 @@
       state.timer.paused = !state.timer.paused;
       if(!state.timer.paused)deadline=Date.now()+state.timer.remaining*1000;
       checkpoint();sendSnapshot();
-      if (state.timer.paused) pauseQuestionBeat(); else if (state.timer.mode === "main") resumeQuestionBeat();
+      if (state.timer.paused) {pauseQuestionBeat();stopPressure();} else {if (state.timer.mode === "main") resumeQuestionBeat();if(state.timer.warned)startPressure();}
       timerEl.textContent = state.timer.paused
         ? `${state.timer.remaining}s (paused)`
         : `${state.timer.remaining}s`;
@@ -1540,7 +1548,7 @@
       $('phasePageTitle').textContent=title;$('phasePageDescription').textContent=description;
       document.title=title+' | VA MDE Triage Jeopardy';
       history.replaceState(null,'','#'+screen);
-      if(changed){window.scrollTo({top:0,behavior:'instant'});if(!['landing','lobby'].includes(screen))$('phasePageTitle').focus({preventScroll:true});}
+      if(changed){playStageSound(screen);document.body.classList.remove('phase-enter');void document.body.offsetWidth;document.body.classList.add('phase-enter');window.scrollTo({top:0,behavior:'instant'});if(!['landing','lobby'].includes(screen))$('phasePageTitle').focus({preventScroll:true});}
     }
     function logAction(action,detail){audit.push({at:new Date().toISOString(),action,detail});if(audit.length>200)audit.shift();}
     function captureBoard(){if(!state.board)return null;return {cfg:state.board.cfg,categories:state.board.categories,rows:state.board.rows,dd:[...state.board.dailyDoubles],clues:state.board.categories.flatMap(c=>state.board.rows.map(r=>[state.board.keyFor(c,r),state.board.clueFor(c,r)]))};}

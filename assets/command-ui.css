@@ -88,3 +88,15 @@ body[data-screen=selection] #toggleRankings,body[data-screen=lobby] #toggleRanki
 body:has(#guileHost)[data-screen=lobby]{padding-bottom:40px}
 body[data-screen=lobby] #guileHost{position:relative;right:auto;bottom:auto;z-index:auto;margin:18px 0 18px auto;max-width:100%}
 body[data-screen=lobby] .mission-hud{position:static}
+
+/* Short stage entrances leave controls immediately usable. */
+@keyframes mission-enter{from{opacity:.45;translate:0 12px}to{opacity:1;translate:0 0}}
+@keyframes command-glow{from{box-shadow:0 0 0 #e0be7900}to{box-shadow:0 0 22px #e0be7955}}
+.phase-enter #phasePageHeader,.phase-enter #lobbyPane,.phase-enter #waitingRoomPane,.phase-enter #boardPane,.phase-enter #qaPane,.phase-enter #finalPane,.phase-enter #summaryPane{animation:mission-enter .32s ease-out both}
+#guileHost>div{transition:border-color .2s,box-shadow .2s}
+#guileHost[data-reaction=correct]>div,#guileHost[data-reaction=steal]>div{animation:command-glow .35s ease-out 2 alternate}
+.btn{transition:background-color .16s,border-color .16s,box-shadow .16s}
+.btn:active:not(:disabled){box-shadow:inset 0 0 0 2px #f2d69c}
+body[data-screen=results] .mission-winners{animation:mission-enter .45s ease-out both}
+@media(prefers-reduced-motion:reduce){.phase-enter *,#guileHost>div{animation:none!important;transition:none!important}}
+.reduce-motion .phase-enter,.reduce-motion #guileHost>div{animation:none!important;transition:none!important}

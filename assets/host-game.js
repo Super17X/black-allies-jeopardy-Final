@@ -245,10 +245,22 @@
     [moneySound, stealSound, rizzSound, boomSound, buzzSound, joinSound].forEach(s => { s.preload = "auto"; });
 
     const stageSounds = Object.fromEntries(Object.entries({'final-wager':'isac_enter_dark_zone.mp3',results:'trumpet.mp3'}).map(([phase,file])=>{const sound=new Audio('assets/'+file);sound.preload='none';return [phase,sound];}));
-    const landingBed=new Audio('assets/hard_work_cadence.mp3');landingBed.preload='auto';landingBed.loop=false;
-    let landingBedStarted=false,landingBedFinished=false;landingBed.addEventListener('ended',()=>{landingBedFinished=true;});
+    // Decode once and loop the complete buffer without network reloads or timer gaps.
+    function createLoopingBed(url){
+      let bufferPromise=null,buffer=null,source=null,gain=null,offset=0,startedAt=0,token=0,volume=.25,paused=true;
+      return {get paused(){return paused;},get currentTime(){return source?(offset+audio.ctx.currentTime-startedAt)%buffer.duration:offset;},set currentTime(value){offset=Math.max(0,Number(value)||0);},get volume(){return volume;},set volume(value){volume=value;if(gain)gain.gain.setTargetAtTime(volume,audio.ctx.currentTime,.025);},
+        async play(){if(!paused)return;audioInit();if(!audio.ctx)throw Error('Audio unavailable');paused=false;const request=++token;
+          try{await audio.ctx.resume();if(!bufferPromise)bufferPromise=fetch(url).then(r=>{if(!r.ok)throw Error('Audio load failed');return r.arrayBuffer();}).then(b=>audio.ctx.decodeAudioData(b)).catch(e=>{bufferPromise=null;throw e;});
+            buffer=await bufferPromise;if(request!==token||paused)return;
+            if(!gain){gain=audio.ctx.createGain();gain.connect(audio.ctx.destination);}gain.gain.value=volume;
+            source=audio.ctx.createBufferSource();source.buffer=buffer;source.loop=true;source.connect(gain);startedAt=audio.ctx.currentTime;source.start(0,offset%buffer.duration);
+          }catch(e){if(request===token)paused=true;throw e;}
+        },pause(){++token;if(source){offset=(offset+audio.ctx.currentTime-startedAt)%buffer.duration;source.stop();source.disconnect();source=null;}paused=true;}
+      };
+    }
+    const landingBed=createLoopingBed('assets/hard_work.mp3');
     const readyCue=new Audio('assets/orders_received.mp3'),allReadyCue=new Audio('assets/platoon_attention.mp3'),stealTick=new Audio('assets/m1_garand_notification.mp3');
-    function syncLandingBed(){landingBed.volume=audio.volume;if(soundModeSel.value==='off'){landingBed.pause();return;}if(landingBedFinished)return;if(!landingBedStarted&&!['landing','lobby'].includes(document.body.dataset.screen))return;if(!landingBed.paused)return;landingBedStarted=true;landingBed.play().catch(()=>{landingBedStarted=false;});}
+    function syncLandingBed(){landingBed.volume=audio.volume;if(soundModeSel.value==='off'){landingBed.pause();return;}if(!['landing','lobby','briefing'].includes(document.body.dataset.screen)){landingBed.pause();landingBed.currentTime=0;return;}landingBed.play().catch(()=>{});}
     function readySound(wasReady,wasAllReady,index){if(!wasReady&&state.ready.get(index)){playResultSound(readyCue);if(!wasAllReady&&allReady())playResultSound(allReadyCue);}}
     const pressureSound=new Audio('assets/beating_hearts.mp3');pressureSound.preload='none';pressureSound.loop=true;
     function stopPressure(){pressureSound.pause();pressureSound.currentTime=0;syncQuestionBeatVolume();}
@@ -313,7 +325,7 @@
       audio.master.connect(audio.ctx.destination);
       setAudioFromUI();
     }
-    document.addEventListener("click", ()=>{audioInit();syncLandingBed();}, { once:true });
+    document.addEventListener("click", ()=>{audioInit();audio.ctx?.resume().catch(()=>{});syncLandingBed();}, { once:true });
 
 
     function setAudioFromUI(){

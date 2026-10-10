@@ -362,11 +362,18 @@
     <div class="spacer"></div>
 
 
+    <p class="tiny">VA bank: 10 categories × 15 questions. Each board draws 5 per category; questions rotate before repeating.</p>
     <div class="row">
+      <label for="trainingFocus" class="mono tiny">Question topics:</label>
+      <select id="trainingFocus" aria-label="Question topics">
+        <option value="va" selected>VA / PACT Act</option>
+        <option value="mixed">VA + MDE triage</option>
+        <option value="mde">MDE triage</option>
+      </select>
       <label for="categoryCount" class="mono tiny">Categories:</label>
       <input id="categoryCount" type="number" min="3" max="10" value="6" style="width:80px" aria-label="Number of categories" />
-      <label for="qPerCat" class="mono tiny">Questions / category:</label>
-      <input id="qPerCat" type="number" min="5" max="5" value="5" style="width:90px" aria-label="Questions per category" />
+      <label for="qPerCat" class="mono tiny">Board questions / category:</label>
+      <input id="qPerCat" type="number" min="5" max="5" value="5" style="width:90px" aria-label="Questions drawn per category from the rotating pool" />
       <label for="startValue" class="mono tiny">Start value:</label>
       <input id="startValue" type="number" min="100" max="1000" value="200" style="width:90px" aria-label="Starting dollar value" />
       <label for="valueStep" class="mono tiny">Step:</label>
@@ -639,6 +646,7 @@
   <script src="config.js"></script>
   <script src="assets/mission-core.js"></script>
 <script src="assets/qrcode.js"></script>
+<script src="assets/va-question-bank.js"></script>
 <script src="assets/host-game.js"></script>
 </body>
 </html>
